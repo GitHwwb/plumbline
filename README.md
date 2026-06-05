@@ -22,8 +22,7 @@ It produces a **self-contained HTML "trace-quality dashboard"** (score badge, a
 view-toggle viewer, a metrics rail, and a flagged-regions table) plus an optional
 JSON sidecar for batch use. **CPU-only. No model inference, no GPU, no server.**
 
-This addresses the segmentation team's wishlist item — *"integrate ink detection to
-help see if an area was segmented correctly."* It does **not** run ink inference,
+This tool does **not** run ink inference,
 do 3D rendering, or edit traces — it *diagnoses*.
 
 ---
