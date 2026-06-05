@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plumbline — {{ meta.segment_id }}</title>
+<style>
+  body { margin:0; background:#0a1521; color:#cfe0ee; font:14px/1.5 ui-monospace,Menlo,monospace; }
+  header { display:flex; justify-content:space-between; align-items:center;
+           padding:12px 18px; border-bottom:1px solid #22354a; }
+  .score { font:700 20px Georgia,serif; padding:4px 12px; border-radius:4px; color:#0a1521; }
+  main { display:flex; gap:16px; padding:18px; }
+  .viewer { flex:1; }
+  .tabs button { background:#13243a; color:#7fb0e0; border:1px solid #2a3f55;
+                 padding:4px 10px; cursor:pointer; font:inherit; }
+  .tabs button.active { background:#5aa0ff; color:#0a1521; }
+  .viewer img { width:100%; border:1px solid #22354a; margin-top:8px; display:none; }
+  .viewer img.active { display:block; }
+  .rail { width:230px; }
+  .rail h3 { color:#5a7a98; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  td,th { text-align:left; border-top:1px solid #22354a; padding:4px 6px; }
+  .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; }
+  .cap { color:#7fb0e0; font-size:12px; margin-top:8px; min-height:32px; }
+  .cap b { color:#cfe0ee; }
+  .ovl { display:none; margin-left:14px; color:#7fb0e0; font-size:12px; cursor:pointer; vertical-align:middle; }
+  .ovl input { vertical-align:middle; margin-right:4px; }
+  td.help { cursor:help; border-bottom:1px dotted #3a5a78; }
+</style>
+</head>
+<body>
+<header>
+  <span>{{ meta.scroll }} · segment {{ meta.segment_id }}</span>
+  <span class="score" style="background:{{ score_color }}">{{ report.score }} / 100</span>
+</header>
+{% if warning %}<div style="background:#3a2a17;color:#ffce5c;padding:8px 18px;border-bottom:1px solid #5a4a2a;font-size:12px;">⚠ {{ warning }}</div>{% endif %}
+<main>
+  <div class="viewer">
+    <div class="tabs">
+      <button data-view="ink" class="active" onclick="show('ink')">Ink + flags</button>
+      <button data-view="heat" onclick="show('heat')">Coherence</button>
+      <button data-view="orient" onclick="show('orient')">Orientation</button>
+      <button data-view="flags" onclick="show('flags')">Flags</button>
+      <label class="ovl" id="ovlwrap"><input type="checkbox" id="ovlchk" onchange="toggleOverlay()">overlay ink image</label>
+    </div>
+    <img id="ink" class="active" src="data:image/png;base64,{{ img_overlay }}">
+    <img id="heat" data-plain="data:image/png;base64,{{ img_heat }}" data-over="data:image/png;base64,{{ img_heat_over }}" src="data:image/png;base64,{{ img_heat }}">
+    <img id="orient" data-plain="data:image/png;base64,{{ img_orient }}" data-over="data:image/png;base64,{{ img_orient_over }}" src="data:image/png;base64,{{ img_orient }}">
+    <img id="flags" src="data:image/png;base64,{{ img_flags }}">
+    <div id="cap" class="cap"></div>
+  </div>
+  <div class="rail">
+    <h3>Metrics</h3>
+    <table>
+      <tr><td class="help" title="Tiles whose text-row direction departs from the local consensus — a sheet jump, drift, or rotation. Lower is better; 0 = consistent rows."><span class="sw" style="background:#ff5c5c"></span>orientation breaks</td><td>{{ report.n_orient }}</td></tr>
+      <tr><td class="help" title="Tiles whose row spacing departs from the local median — lines bunching or stretching. Lower is better."><span class="sw" style="background:#ffce5c"></span>spacing breaks</td><td>{{ report.n_spacing }}</td></tr>
+      <tr><td class="help" title="Confident-ink tiles with no row structure — mottle/noise rather than text. Lower is better."><span class="sw" style="background:#7fb0e0"></span>garble</td><td>{{ report.n_garble }}</td></tr>
+      <tr><td class="help" title="Tiles straddling a vertical seam where text rows step up/down without rotating or changing spacing — the fingerprint of a sheet jump. Lower is better."><span class="sw" style="background:#c77dff"></span>seam breaks</td><td>{{ report.n_seam }}</td></tr>
+      <tr><td class="help" title="Share of tiles with too little ink to assess (mostly blank background). NOT a quality score — high just means lots of empty area, normal for sparse text. The score judges only the confident tiles.">low-confidence</td><td>{{ '%.0f' % (report.low_conf_frac * 100) }}%</td></tr>
+    </table>
+    <h3>Flagged regions</h3>
+    <table>
+      <tr><th>x</th><th>y</th><th>mode</th></tr>
+      {% for r in regions %}<tr><td>{{ r.x }}</td><td>{{ r.y }}</td><td>{{ r.mode }}</td></tr>{% endfor %}
+    </table>
+  </div>
+</main>
+<script>
+const CAPS = {
+  ink: "Ink prediction with every flagged tile outlined in red. <b>Flags mark suspicious regions — more flags means a lower score.</b>",
+  heat: "<b>Row coherence</b> per confident tile: bright = ink forms clear text rows. Near-empty / very sparse tiles are <b>dimmed</b> (not blacked out) so a lone ink sliver doesn't read brighter than real text — a dim tile can mean weak structure <i>or</i> just little ink, so cross-check the Flags view. Background (too little ink to assess) is left blank. Tick <b>overlay ink image</b> to read it against the text. Banded papyrus fibers can mimic rows, so high coherence is <b>not</b> proof of ink.",
+  orient: "Dominant text-row direction per confident tile (arrows lie along the rows). Tick <b>overlay ink image</b> to see the arrows against the text they describe. A local break here is flagged as an orientation break.",
+  flags: "Flagged tiles by failure mode — <span class='sw' style='background:#ff5c5c'></span>orientation · <span class='sw' style='background:#ffce5c'></span>spacing · <span class='sw' style='background:#7fb0e0'></span>garble · <span class='sw' style='background:#c77dff'></span>seam (rows step at a sheet jump). Tiles span the analysis grid (not individual letters)."
+};
+const OVERLAYABLE = {heat:1, orient:1};   // tabs that support the ink overlay toggle
+function applyOverlay(id){
+  const img=document.getElementById(id);
+  if(!img || !img.dataset.over) return;
+  img.src = document.getElementById('ovlchk').checked ? img.dataset.over : img.dataset.plain;
+}
+function show(id){
+  document.querySelectorAll('.viewer img').forEach(i=>i.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===id));
+  document.getElementById('ovlwrap').style.display = OVERLAYABLE[id] ? 'inline-block' : 'none';
+  if(OVERLAYABLE[id]) applyOverlay(id);            // honor the checkbox on this tab
+  document.getElementById('cap').innerHTML = CAPS[id];
+}
+function toggleOverlay(){
+  applyOverlay('heat'); applyOverlay('orient');    // keep both overlay tabs in sync
+}
+show('ink');
+</script>
+</body>
+</html>

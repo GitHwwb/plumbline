@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Data (don't commit downloaded scroll segments / large images)
+data/
+*.tif
+*.tiff
+
+# Generated example artifacts (regenerable via examples/make_synthetic_example.py)
+examples/*.html
+examples/*.png
+
+# Local demo scratch (regenerable: `plumbline batch demo_segments -o demo_out`).
+# Throwaway input/output for eyeballing the tool; never part of the shipped package.
+demo_segments/
+demo_out/
+
+# Brainstorm scratch
+.superpowers/
+
+# OS
+.DS_Store
+
+# Synthetic showcase reports (bundled in the handoff zip as example output, not git-tracked)
+demo_showcase/
+demo_synthetic/

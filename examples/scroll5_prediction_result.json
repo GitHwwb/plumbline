@@ -1,0 +1,71 @@
+{
+  "segment_id": "scroll5_prediction (real ink-model prediction)",
+  "score": 83,
+  "n_orient": 1,
+  "n_spacing": 2,
+  "n_garble": 72,
+  "n_seam": 0,
+  "low_conf_frac": 0.0,
+  "regions": [
+    {
+      "x": 1161,
+      "y": 829,
+      "mode": "orientation"
+    },
+    {
+      "x": 829,
+      "y": 331,
+      "mode": "spacing"
+    },
+    {
+      "x": 331,
+      "y": 995,
+      "mode": "spacing"
+    },
+    {
+      "x": 165,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 331,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 497,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 663,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 829,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 995,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 2323,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 5145,
+      "y": 331,
+      "mode": "garble"
+    },
+    {
+      "x": 5311,
+      "y": 331,
+      "mode": "garble"
+    }
+  ]
+}

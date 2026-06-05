@@ -1,0 +1,39 @@
+[project]
+name = "plumbline"
+version = "0.1.0"
+description = "Trace-quality reports for Vesuvius Challenge scroll segments"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "Pillow>=10.0",
+    "tifffile>=2024.1",
+    "matplotlib>=3.8",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+fetch = ["vesuvius"]
+zarr = ["zarr>=2.16,<3"]
+remote = ["fsspec", "s3fs"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+plumbline = "plumbline.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["plumbline"]
+
+[tool.setuptools.package-data]
+plumbline = ["templates/*.j2"]
+
+[tool.pytest.ini_options]
+# Put the repo root on sys.path so `import plumbline` resolves the in-tree
+# package deterministically, independent of editable-install finder state.
+pythonpath = ["."]
+testpaths = ["tests"]
