@@ -28,8 +28,9 @@
   .logo small{display:block;font-weight:400;letter-spacing:.1em;color:var(--muted);
               font-size:11px;margin-top:4px;text-transform:none}
   /* ---------- layout ---------- */
-  main{display:grid;grid-template-columns:minmax(0,1fr) 308px;gap:20px;
+  main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;
        align-items:start;margin-top:20px}
+  .rail{display:grid;gap:20px}
   .panel{background:var(--panel);border:1px solid var(--hair)}
   .viewer{padding:16px 16px 18px}
   /* segmented control (keeps .tabs button.active JS contract) */
@@ -67,39 +68,40 @@
   .flagbox:hover .tip{display:block}
   .cap{font-size:12.5px;color:var(--muted);margin-top:11px;min-height:34px}
   .cap b{color:var(--ink);font-weight:600}
-  /* ---------- rail ---------- */
-  .health{padding:20px 20px 16px}
-  .health .n{font-size:62px;font-weight:200;letter-spacing:-.03em;line-height:1}
-  .health .n small{font-size:21px;color:var(--muted);font-weight:300}
-  .health .lbl{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
-               color:var(--muted);font-weight:600;margin-top:8px}
-  .bar{height:3px;background:var(--hair);margin-top:14px;overflow:hidden;border-radius:2px}
+  /* ---------- rail (condensed) ---------- */
+  .health{padding:16px 18px 13px}
+  .health .n{font-size:54px;font-weight:200;letter-spacing:-.03em;line-height:1}
+  .health .n small{font-size:19px;color:var(--muted);font-weight:300}
+  .health .lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+               color:var(--muted);font-weight:600;margin-top:7px}
+  .bar{height:3px;background:var(--hair);margin-top:12px;overflow:hidden;border-radius:2px}
   .bar i{display:block;height:100%}
-  .list{padding:2px 20px 6px}
-  .row{display:grid;grid-template-columns:16px 1fr auto;gap:10px;align-items:center;
-       padding:11px 0;border-top:1px solid var(--hair);font-size:14px;cursor:help}
-  .row b{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px}
+  .list{padding:0 18px 4px}
+  .row{display:grid;grid-template-columns:16px 1fr auto;gap:9px;align-items:center;
+       padding:9px 0;border-top:1px solid var(--hair);font-size:13.5px;cursor:help}
+  .row b{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px}
   .row .z{color:var(--muted);font-weight:400}
   .led{width:9px;height:9px;border-radius:50%;border:1px solid rgba(25,24,19,.40)}
   .led.or{background:var(--f-orient)} .led.sp{background:var(--f-spacing)}
   .led.ga{background:var(--f-garble)} .led.se{background:var(--f-seam)}
   .led.off{background:#cfc8b2;border-color:rgba(25,24,19,.22)}
-  .params{padding:13px 20px 16px;border-top:1px solid var(--hair);
-          font-size:12px;color:var(--muted);line-height:1.8}
+  .params{padding:10px 18px 13px;border-top:1px solid var(--hair);
+          font-size:11.5px;color:var(--muted);line-height:1.75}
   .params b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
-  /* ---------- regions ---------- */
-  .regions{grid-column:1/-1;padding:16px 20px 8px}
+  /* ---------- regions (in the rail) ---------- */
+  .regions{padding:14px 18px 6px}
   .regions h3{font-size:10.5px;font-weight:600;letter-spacing:.2em;
-              text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
-     font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line)}
-  td{padding:9px 8px;border-bottom:1px solid var(--hair);font-variant-numeric:tabular-nums}
-  tr:last-child td{border-bottom:0}
-  td .led{display:inline-block;margin-right:9px;vertical-align:0}
-  td.mode{font-weight:600;font-size:13.5px}
-  tr.regrow{cursor:pointer}
-  tr.regrow:hover{background:#f4efdf}
+              text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .rlist{max-height:430px;overflow-y:auto;margin:0 -18px;padding:0 18px}
+  .regrow{padding:8px 0 9px;border-top:1px solid var(--hair);cursor:pointer}
+  .rlist .regrow:first-child{border-top:0}
+  .regrow:hover{background:#f4efdf}
+  .rline{display:flex;align-items:center;gap:8px;font-size:13px}
+  .rline b{font-weight:600}
+  .rline .led{flex:none}
+  .rxy{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+  .rmeas{font-size:11.5px;color:var(--muted);margin:2px 0 0 17px;line-height:1.45}
+  .rempty{padding:10px 0 12px;font-size:13px;color:var(--muted)}
   @media(max-width:900px){main{grid-template-columns:1fr}}
 </style>
 </head>
@@ -286,6 +288,7 @@
     <div id="cap" class="cap"></div>
   </div>
 
+  <div class="rail">
   <div class="panel">
     <div class="health">
       <div class="n">0<small> /100</small></div>
@@ -307,10 +310,158 @@
 
   <div class="panel regions">
     <h3>Flagged regions</h3>
-    <table>
-      <tr><th>x</th><th>y</th><th>mode</th><th>measurements</th></tr>
-      <tr class="regrow" data-idx="0" title="click to locate"><td>128</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 51px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="1" title="click to locate"><td>256</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 33px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="2" title="click to locate"><td>384</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 18px · rowness 0.05 · ink 37%</td></tr><tr class="regrow" data-idx="3" title="click to locate"><td>512</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 23px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="4" title="click to locate"><td>640</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 83px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="5" title="click to locate"><td>768</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 105px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="6" title="click to locate"><td>896</td><td>128</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 78px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="7" title="click to locate"><td>128</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 51px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="8" title="click to locate"><td>256</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 44px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="9" title="click to locate"><td>384</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 112px · rowness 0.05 · ink 37%</td></tr><tr class="regrow" data-idx="10" title="click to locate"><td>512</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 23px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="11" title="click to locate"><td>640</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="12" title="click to locate"><td>768</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 24px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="13" title="click to locate"><td>896</td><td>256</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 42px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="14" title="click to locate"><td>128</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 45px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="15" title="click to locate"><td>256</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 59px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="16" title="click to locate"><td>384</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 112px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="17" title="click to locate"><td>512</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 103px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="18" title="click to locate"><td>640</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 107px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="19" title="click to locate"><td>768</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 63px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="20" title="click to locate"><td>896</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 62px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="21" title="click to locate"><td>128</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="22" title="click to locate"><td>256</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 59px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="23" title="click to locate"><td>384</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 26px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="24" title="click to locate"><td>512</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 92px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="25" title="click to locate"><td>640</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 67px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="26" title="click to locate"><td>768</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 21px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="27" title="click to locate"><td>896</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 80px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="28" title="click to locate"><td>128</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="29" title="click to locate"><td>256</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 26px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="30" title="click to locate"><td>384</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 26px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="31" title="click to locate"><td>512</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 18px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="32" title="click to locate"><td>640</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 25px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="33" title="click to locate"><td>768</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 21px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="34" title="click to locate"><td>896</td><td>640</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 89px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="35" title="click to locate"><td>128</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 38px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="36" title="click to locate"><td>256</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 37px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="37" title="click to locate"><td>384</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 49px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="38" title="click to locate"><td>512</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 98px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="39" title="click to locate"><td>640</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 90px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="40" title="click to locate"><td>768</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 113px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="41" title="click to locate"><td>896</td><td>768</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 60px · rowness 0.06 · ink 37%</td></tr><tr class="regrow" data-idx="42" title="click to locate"><td>128</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 38px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="43" title="click to locate"><td>256</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 17px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="44" title="click to locate"><td>384</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 53px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="45" title="click to locate"><td>512</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="46" title="click to locate"><td>640</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 31px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="47" title="click to locate"><td>768</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 19px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="48" title="click to locate"><td>896</td><td>896</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 19px · rowness 0.05 · ink 38%</td></tr>
-    </table>
+    <div class="rlist">
+      <div class="regrow" data-idx="0" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 51px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="1" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 33px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="2" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 18px · rowness 0.05 · ink 37%</div>
+      </div><div class="regrow" data-idx="3" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 23px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="4" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 83px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="5" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 105px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="6" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 128</span></div>
+        <div class="rmeas">angle 0° · row pitch 78px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="7" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 51px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="8" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 44px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="9" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 112px · rowness 0.05 · ink 37%</div>
+      </div><div class="regrow" data-idx="10" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 23px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="11" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="12" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 24px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="13" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 256</span></div>
+        <div class="rmeas">angle 0° · row pitch 42px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="14" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 45px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="15" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 59px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="16" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 112px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="17" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 103px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="18" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 107px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="19" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 63px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="20" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 62px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="21" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="22" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 59px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="23" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 26px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="24" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 92px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="25" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 67px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="26" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 21px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="27" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 80px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="28" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="29" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 26px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="30" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 26px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="31" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 18px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="32" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 25px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="33" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 21px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="34" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 640</span></div>
+        <div class="rmeas">angle 0° · row pitch 89px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="35" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 38px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="36" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 37px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="37" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 49px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="38" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 98px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="39" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 90px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="40" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 113px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="41" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 768</span></div>
+        <div class="rmeas">angle 0° · row pitch 60px · rowness 0.06 · ink 37%</div>
+      </div><div class="regrow" data-idx="42" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">128, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 38px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="43" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">256, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 17px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="44" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 53px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="45" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 24px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="46" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">640, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 31px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="47" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">768, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 19px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="48" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">896, 896</span></div>
+        <div class="rmeas">angle 0° · row pitch 19px · rowness 0.05 · ink 38%</div>
+      </div>
+      
+    </div>
+  </div>
   </div>
 
 </main>
@@ -340,7 +491,7 @@ function show(id){
 function toggleOverlay(){
   applyOverlay('heat'); applyOverlay('orient');    // keep both overlay tabs in sync
 }
-document.querySelectorAll('tr.regrow').forEach(function(tr){
+document.querySelectorAll('.regrow').forEach(function(tr){
   var box = function(){ return document.getElementById('fb' + tr.dataset.idx); };
   tr.addEventListener('click', function(){
     show('ink');                                   // boxes live on the ink view

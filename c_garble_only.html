@@ -28,8 +28,9 @@
   .logo small{display:block;font-weight:400;letter-spacing:.1em;color:var(--muted);
               font-size:11px;margin-top:4px;text-transform:none}
   /* ---------- layout ---------- */
-  main{display:grid;grid-template-columns:minmax(0,1fr) 308px;gap:20px;
+  main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;
        align-items:start;margin-top:20px}
+  .rail{display:grid;gap:20px}
   .panel{background:var(--panel);border:1px solid var(--hair)}
   .viewer{padding:16px 16px 18px}
   /* segmented control (keeps .tabs button.active JS contract) */
@@ -67,39 +68,40 @@
   .flagbox:hover .tip{display:block}
   .cap{font-size:12.5px;color:var(--muted);margin-top:11px;min-height:34px}
   .cap b{color:var(--ink);font-weight:600}
-  /* ---------- rail ---------- */
-  .health{padding:20px 20px 16px}
-  .health .n{font-size:62px;font-weight:200;letter-spacing:-.03em;line-height:1}
-  .health .n small{font-size:21px;color:var(--muted);font-weight:300}
-  .health .lbl{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
-               color:var(--muted);font-weight:600;margin-top:8px}
-  .bar{height:3px;background:var(--hair);margin-top:14px;overflow:hidden;border-radius:2px}
+  /* ---------- rail (condensed) ---------- */
+  .health{padding:16px 18px 13px}
+  .health .n{font-size:54px;font-weight:200;letter-spacing:-.03em;line-height:1}
+  .health .n small{font-size:19px;color:var(--muted);font-weight:300}
+  .health .lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+               color:var(--muted);font-weight:600;margin-top:7px}
+  .bar{height:3px;background:var(--hair);margin-top:12px;overflow:hidden;border-radius:2px}
   .bar i{display:block;height:100%}
-  .list{padding:2px 20px 6px}
-  .row{display:grid;grid-template-columns:16px 1fr auto;gap:10px;align-items:center;
-       padding:11px 0;border-top:1px solid var(--hair);font-size:14px;cursor:help}
-  .row b{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px}
+  .list{padding:0 18px 4px}
+  .row{display:grid;grid-template-columns:16px 1fr auto;gap:9px;align-items:center;
+       padding:9px 0;border-top:1px solid var(--hair);font-size:13.5px;cursor:help}
+  .row b{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px}
   .row .z{color:var(--muted);font-weight:400}
   .led{width:9px;height:9px;border-radius:50%;border:1px solid rgba(25,24,19,.40)}
   .led.or{background:var(--f-orient)} .led.sp{background:var(--f-spacing)}
   .led.ga{background:var(--f-garble)} .led.se{background:var(--f-seam)}
   .led.off{background:#cfc8b2;border-color:rgba(25,24,19,.22)}
-  .params{padding:13px 20px 16px;border-top:1px solid var(--hair);
-          font-size:12px;color:var(--muted);line-height:1.8}
+  .params{padding:10px 18px 13px;border-top:1px solid var(--hair);
+          font-size:11.5px;color:var(--muted);line-height:1.75}
   .params b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
-  /* ---------- regions ---------- */
-  .regions{grid-column:1/-1;padding:16px 20px 8px}
+  /* ---------- regions (in the rail) ---------- */
+  .regions{padding:14px 18px 6px}
   .regions h3{font-size:10.5px;font-weight:600;letter-spacing:.2em;
-              text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
-     font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line)}
-  td{padding:9px 8px;border-bottom:1px solid var(--hair);font-variant-numeric:tabular-nums}
-  tr:last-child td{border-bottom:0}
-  td .led{display:inline-block;margin-right:9px;vertical-align:0}
-  td.mode{font-weight:600;font-size:13.5px}
-  tr.regrow{cursor:pointer}
-  tr.regrow:hover{background:#f4efdf}
+              text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .rlist{max-height:430px;overflow-y:auto;margin:0 -18px;padding:0 18px}
+  .regrow{padding:8px 0 9px;border-top:1px solid var(--hair);cursor:pointer}
+  .rlist .regrow:first-child{border-top:0}
+  .regrow:hover{background:#f4efdf}
+  .rline{display:flex;align-items:center;gap:8px;font-size:13px}
+  .rline b{font-weight:600}
+  .rline .led{flex:none}
+  .rxy{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px}
+  .rmeas{font-size:11.5px;color:var(--muted);margin:2px 0 0 17px;line-height:1.45}
+  .rempty{padding:10px 0 12px;font-size:13px;color:var(--muted)}
   @media(max-width:900px){main{grid-template-columns:1fr}}
 </style>
 </head>
@@ -151,6 +153,7 @@
     <div id="cap" class="cap"></div>
   </div>
 
+  <div class="rail">
   <div class="panel">
     <div class="health">
       <div class="n">92<small> /100</small></div>
@@ -172,10 +175,23 @@
 
   <div class="panel regions">
     <h3>Flagged regions</h3>
-    <table>
-      <tr><th>x</th><th>y</th><th>mode</th><th>measurements</th></tr>
-      <tr class="regrow" data-idx="0" title="click to locate"><td>384</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 55px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="1" title="click to locate"><td>512</td><td>384</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 33px · rowness 0.06 · ink 38%</td></tr><tr class="regrow" data-idx="2" title="click to locate"><td>384</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 95px · rowness 0.05 · ink 38%</td></tr><tr class="regrow" data-idx="3" title="click to locate"><td>512</td><td>512</td><td class="mode"><span class="led ga"></span>garble</td><td style="color:var(--muted);font-size:13px">angle 0° · row pitch 72px · rowness 0.06 · ink 38%</td></tr>
-    </table>
+    <div class="rlist">
+      <div class="regrow" data-idx="0" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 55px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="1" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 384</span></div>
+        <div class="rmeas">angle 0° · row pitch 33px · rowness 0.06 · ink 38%</div>
+      </div><div class="regrow" data-idx="2" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">384, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 95px · rowness 0.05 · ink 38%</div>
+      </div><div class="regrow" data-idx="3" title="click to locate">
+        <div class="rline"><span class="led ga"></span><b>garble</b><span class="rxy">512, 512</span></div>
+        <div class="rmeas">angle 0° · row pitch 72px · rowness 0.06 · ink 38%</div>
+      </div>
+      
+    </div>
+  </div>
   </div>
 
 </main>
@@ -205,7 +221,7 @@ function show(id){
 function toggleOverlay(){
   applyOverlay('heat'); applyOverlay('orient');    // keep both overlay tabs in sync
 }
-document.querySelectorAll('tr.regrow').forEach(function(tr){
+document.querySelectorAll('.regrow').forEach(function(tr){
   var box = function(){ return document.getElementById('fb' + tr.dataset.idx); };
   tr.addEventListener('click', function(){
     show('ink');                                   // boxes live on the ink view
