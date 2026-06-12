@@ -38,6 +38,9 @@
   thead th{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
            color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);
            cursor:pointer;user-select:none;white-space:nowrap}
+  th.sortable::after{content:"↕";margin-left:6px;font-size:10px;opacity:.35}
+  th.sortable.asc::after{content:"▲";opacity:.85;color:var(--ink)}
+  th.sortable.desc::after{content:"▼";opacity:.85;color:var(--ink)}
   tbody td{border-bottom:1px solid var(--hair);font-variant-numeric:tabular-nums}
   tbody tr:last-child td{border-bottom:0}
   tr.clickable{cursor:pointer}
@@ -75,13 +78,13 @@
 <table id="t">
 <thead><tr>
   <th>view</th>
-  <th onclick="sortBy(1,'s')">segment</th>
-  <th onclick="sortBy(2,'n')">health</th>
-  <th onclick="sortBy(3,'n')">orient</th>
-  <th onclick="sortBy(4,'n')">spacing</th>
-  <th onclick="sortBy(5,'n')">garble</th>
-  <th onclick="sortBy(6,'n')">seam</th>
-  <th onclick="sortBy(7,'n')">low-conf</th>
+  <th class="sortable" onclick="sortBy(1,'s')">segment</th>
+  <th class="sortable asc" onclick="sortBy(2,'n')" title="0–100 trace health: the share of analyzable tiles with no flags. A heuristic triage signal, not a verdict — click a row for the full report.">health</th>
+  <th class="sortable" onclick="sortBy(3,'n')" title="Tiles whose text-row direction departs from the local consensus — a sheet jump, drift, or rotation. Lower is better; 0 = consistent rows.">orient</th>
+  <th class="sortable" onclick="sortBy(4,'n')" title="Tiles whose row spacing departs from the local median — lines bunching or stretching. Lower is better.">spacing</th>
+  <th class="sortable" onclick="sortBy(5,'n')" title="Confident-ink tiles with no row structure — mottle/noise rather than text. Lower is better.">garble</th>
+  <th class="sortable" onclick="sortBy(6,'n')" title="Tiles straddling a vertical seam where text rows step up/down without rotating or changing spacing — the fingerprint of a sheet jump. The score barely moves, so seam segments sort to the top.">seam</th>
+  <th class="sortable" onclick="sortBy(7,'n')" title="Share of tiles with too little ink to assess (mostly blank background). NOT a quality score — high just means lots of empty area, normal for sparse text.">low-conf</th>
 </tr></thead>
 <tbody>
 {% for r in rows %}
@@ -130,6 +133,9 @@ function sortBy(col, type){
     return av < bv ? -dir : av > bv ? dir : 0;
   });
   rows.forEach(function(r){ tb.appendChild(r); });
+  var ths = document.querySelectorAll('#t thead th');
+  ths.forEach(function(h){ h.classList.remove('asc', 'desc'); });
+  ths[col].classList.add(asc[col] ? 'asc' : 'desc');
 }
 </script>
 </body>

@@ -65,3 +65,23 @@ def test_render_index_escapes_html():
     assert "<script>x</script>" not in html      # injected seg_id is escaped
     assert "&lt;script&gt;" in html
     assert "S<b>" not in html                     # meta is escaped too
+
+
+def test_render_index_headers_explain_flag_types():
+    # User request: hovering a flag-type column header on the dashboard must
+    # explain what the flag means (same wording family as the report rail).
+    rows = [IndexRow("s", 95, 1, 0, 0, 0.1, "s.html", None, None)]
+    html = render_index(rows, {"scroll": "S"})
+    for phrase in ("text-row direction departs", "row spacing departs",
+                   "no row structure", "fingerprint of a sheet jump",
+                   "too little ink to assess"):
+        assert phrase in html, f"missing header tooltip: {phrase}"
+
+
+def test_render_index_headers_have_sort_indicators():
+    # Sortable headers carry a neutral indicator; the active column shows an
+    # asc/desc arrow (state classes toggled by sortBy, arrows drawn in CSS).
+    rows = [IndexRow("s", 95, 1, 0, 0, 0.1, "s.html", None, None)]
+    html = render_index(rows, {"scroll": "S"})
+    assert html.count('class="sortable') >= 7, "all data columns sortable-marked"
+    assert "▲" in html and "▼" in html
