@@ -4,63 +4,131 @@
 <meta charset="utf-8">
 <title>Plumbline — {{ meta.segment_id }}</title>
 <style>
-  body { margin:0; background:#0a1521; color:#cfe0ee; font:14px/1.5 ui-monospace,Menlo,monospace; }
-  header { display:flex; justify-content:space-between; align-items:center;
-           padding:12px 18px; border-bottom:1px solid #22354a; }
-  .score { font:700 20px Georgia,serif; padding:4px 12px; border-radius:4px; color:#0a1521; }
-  .seam-banner { background:#c77dff; color:#0a1521; padding:3px 10px; border-radius:4px;
-                 font-size:12px; font-weight:700; letter-spacing:.5px; margin-right:10px;
-                 text-transform:uppercase; }
-  main { display:flex; gap:16px; padding:18px; }
-  .viewer { flex:1; }
-  .tabs button { background:#13243a; color:#7fb0e0; border:1px solid #2a3f55;
-                 padding:4px 10px; cursor:pointer; font:inherit; }
-  .tabs button.active { background:#5aa0ff; color:#0a1521; }
-  .viewer .view { margin-top:8px; display:none; }
-  .viewer .view.active { display:block; }
-  .viewer img { width:100%; border:1px solid #22354a; display:block; }
-  #ink { position:relative; }   /* anchor for the absolutely-positioned flag boxes */
-  .flagbox { position:absolute; border:2px solid; box-sizing:border-box; cursor:help; }
-  .flagbox.orientation { border-color:#ff5c5c; }
-  .flagbox.spacing { border-color:#ffce5c; }
-  .flagbox.garble { border-color:#7fb0e0; }
-  .flagbox.seam { border-color:#c77dff; }
-  .flagbox:hover, .flagbox.hot { background:rgba(255,255,255,.14); z-index:4; }
-  .flagbox.hot { box-shadow:0 0 0 2px #ffffff66; }
-  .flagbox.glow { background:rgba(255,255,255,.08); box-shadow:0 0 6px 2px #ffffff44; z-index:3; }
-  .flagbox .tip { display:none; position:absolute; left:0; top:100%; z-index:6;
-                  background:#13243a; color:#cfe0ee; padding:4px 8px; font-size:11px;
-                  white-space:nowrap; border:1px solid #2a3f55; border-radius:3px; }
-  .flagbox:hover .tip { display:block; }
-  tr.regrow { cursor:pointer; }
-  tr.regrow:hover { background:#13243a; }
-  .rail { width:230px; }
-  .rail h3 { color:#5a7a98; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
-  table { width:100%; border-collapse:collapse; font-size:12px; }
-  td,th { text-align:left; border-top:1px solid #22354a; padding:4px 6px; }
-  .sw { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; }
-  .cap { color:#7fb0e0; font-size:12px; margin-top:8px; min-height:32px; }
-  .cap b { color:#cfe0ee; }
-  .ovl { display:none; margin-left:14px; color:#7fb0e0; font-size:12px; cursor:pointer; vertical-align:middle; }
-  .ovl input { vertical-align:middle; margin-right:4px; }
-  td.help { cursor:help; border-bottom:1px dotted #3a5a78; }
+  :root{
+    --bg:#f6f2e7; --panel:#fdfbf4; --ink:#191813; --muted:#75715f;
+    --hair:#ddd6c1; --line:#191813;
+    --f-orient:#e23227; --f-spacing:#fcf151; --f-garble:#5acbfa;
+    --f-seam:#a855f7; --good:#8efc4e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+       font:400 15px/1.55 "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .frame{max-width:1280px;margin:0 auto;padding:0 28px 44px}
+  /* ---------- header band ---------- */
+  header{border-bottom:1px solid var(--line)}
+  .hrow{display:flex;min-height:80px;flex-wrap:wrap}
+  .cell{padding:18px 22px;border-left:1px solid var(--hair);
+        display:flex;flex-direction:column;justify-content:center}
+  .cell:first-child{border-left:0;padding-left:0}
+  .k{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+     font-weight:600;margin-bottom:4px}
+  .v{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+  .logo{font-size:15px;font-weight:700;letter-spacing:.24em;text-transform:uppercase}
+  .logo small{display:block;font-weight:400;letter-spacing:.1em;color:var(--muted);
+              font-size:11px;margin-top:4px;text-transform:none}
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:minmax(0,1fr) 308px;gap:20px;
+       align-items:start;margin-top:20px}
+  .panel{background:var(--panel);border:1px solid var(--hair)}
+  .viewer{padding:16px 16px 18px}
+  /* segmented control (keeps .tabs button.active JS contract) */
+  .tabs{display:inline-flex;background:#e9e3d2;border-radius:9px;padding:3px;
+        margin-bottom:14px;vertical-align:middle}
+  .tabs button{appearance:none;border:0;background:transparent;color:var(--muted);
+               padding:6px 15px;font:inherit;font-size:13.5px;border-radius:7px;cursor:pointer}
+  .tabs button.active{background:var(--panel);color:var(--ink);font-weight:600;
+                      box-shadow:0 1px 2px rgba(25,24,19,.12)}
+  .ovl{display:none;margin-left:14px;color:var(--muted);font-size:12.5px;
+       cursor:pointer;vertical-align:middle}
+  .ovl input{vertical-align:middle;margin-right:5px;accent-color:var(--ink)}
+  /* notices */
+  .seam-banner,.warning{font-size:13.5px;margin:0 0 12px;padding:2px 0 2px 12px}
+  .seam-banner{border-left:3px solid var(--f-seam);font-weight:600}
+  .warning{border-left:3px solid var(--ink);color:#54503f}
+  .warning b{font-weight:600}
+  /* views */
+  .viewer .view{display:none}
+  .viewer .view.active{display:block}
+  .viewer img{width:100%;display:block}
+  #ink{position:relative}
+  .flagbox{position:absolute;border:2.5px solid;box-sizing:border-box;cursor:help}
+  .flagbox.orientation{border-color:var(--f-orient)}
+  .flagbox.spacing{border-color:var(--f-spacing)}
+  .flagbox.garble{border-color:var(--f-garble)}
+  .flagbox.seam{border-color:var(--f-seam)}
+  .flagbox:hover,.flagbox.hot{background:rgba(253,251,244,.16);z-index:4}
+  .flagbox.hot{box-shadow:0 0 0 2px rgba(253,251,244,.5)}
+  .flagbox.glow{background:rgba(253,251,244,.10);z-index:3}
+  .flagbox .tip{display:none;position:absolute;left:0;top:100%;z-index:6;
+                background:var(--panel);color:var(--ink);padding:5px 9px;
+                font-size:11.5px;white-space:nowrap;border:1px solid var(--hair);
+                box-shadow:0 2px 8px rgba(25,24,19,.14)}
+  .flagbox:hover .tip{display:block}
+  .cap{font-size:12.5px;color:var(--muted);margin-top:11px;min-height:34px}
+  .cap b{color:var(--ink);font-weight:600}
+  /* ---------- rail ---------- */
+  .health{padding:20px 20px 16px}
+  .health .n{font-size:62px;font-weight:200;letter-spacing:-.03em;line-height:1}
+  .health .n small{font-size:21px;color:var(--muted);font-weight:300}
+  .health .lbl{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;
+               color:var(--muted);font-weight:600;margin-top:8px}
+  .bar{height:3px;background:var(--hair);margin-top:14px;overflow:hidden;border-radius:2px}
+  .bar i{display:block;height:100%}
+  .list{padding:2px 20px 6px}
+  .row{display:grid;grid-template-columns:16px 1fr auto;gap:10px;align-items:center;
+       padding:11px 0;border-top:1px solid var(--hair);font-size:14px;cursor:help}
+  .row b{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px}
+  .row .z{color:var(--muted);font-weight:400}
+  .led{width:9px;height:9px;border-radius:50%;border:1px solid rgba(25,24,19,.40)}
+  .led.or{background:var(--f-orient)} .led.sp{background:var(--f-spacing)}
+  .led.ga{background:var(--f-garble)} .led.se{background:var(--f-seam)}
+  .led.off{background:#cfc8b2;border-color:rgba(25,24,19,.22)}
+  .params{padding:13px 20px 16px;border-top:1px solid var(--hair);
+          font-size:12px;color:var(--muted);line-height:1.8}
+  .params b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  /* ---------- regions ---------- */
+  .regions{grid-column:1/-1;padding:16px 20px 8px}
+  .regions h3{font-size:10.5px;font-weight:600;letter-spacing:.2em;
+              text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+     font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 8px;border-bottom:1px solid var(--hair);font-variant-numeric:tabular-nums}
+  tr:last-child td{border-bottom:0}
+  td .led{display:inline-block;margin-right:9px;vertical-align:0}
+  td.mode{font-weight:600;font-size:13.5px}
+  tr.regrow{cursor:pointer}
+  tr.regrow:hover{background:#f4efdf}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<div class="frame">
+
 <header>
-  <span>{{ meta.scroll }} · segment {{ meta.segment_id }}</span>
-  <span>{% if report.n_seam %}<span class="seam-banner" title="text rows step vertically at a column — the fingerprint of a sheet jump; the area-based score barely moves, so this banner is the signal">⚠ sheet-jump seam</span>{% endif %}<span class="score" style="background:{{ score_color }}">{{ report.score }} / 100</span></span>
+  <div class="hrow">
+    <div class="cell"><div class="logo">Plumbline<small>trace-quality report</small></div></div>
+    <div class="cell"><div class="k">Scroll</div><div class="v">{{ meta.scroll }}</div></div>
+    <div class="cell"><div class="k">Segment</div><div class="v">{{ meta.segment_id }}</div></div>
+    <div class="cell"><div class="k">Raster</div><div class="v">{{ "{:,}".format(iw) }} × {{ "{:,}".format(ih) }} px</div></div>
+    <div class="cell"><div class="k">Analyzed</div><div class="v">{{ analyzed }}</div></div>
+  </div>
 </header>
-{% if warning %}<div style="background:#3a2a17;color:#ffce5c;padding:8px 18px;border-bottom:1px solid #5a4a2a;font-size:12px;">⚠ {{ warning }}</div>{% endif %}
+
 <main>
-  <div class="viewer">
-    <div class="tabs">
-      <button data-view="ink" class="active" onclick="show('ink')">Ink + flags</button>
-      <button data-view="heat" onclick="show('heat')">Coherence</button>
-      <button data-view="orient" onclick="show('orient')">Orientation</button>
-      <button data-view="flags" onclick="show('flags')">Flags</button>
-      <label class="ovl" id="ovlwrap"><input type="checkbox" id="ovlchk" onchange="toggleOverlay()">overlay ink image</label>
+
+  <div class="panel viewer">
+    <div>
+      <div class="tabs">
+        <button data-view="ink" class="active" onclick="show('ink')">Ink + flags</button>
+        <button data-view="heat" onclick="show('heat')">Coherence</button>
+        <button data-view="orient" onclick="show('orient')">Orientation</button>
+        <button data-view="flags" onclick="show('flags')">Flags</button>
+      </div><label class="ovl" id="ovlwrap"><input type="checkbox" id="ovlchk" onchange="toggleOverlay()">overlay ink image</label>
     </div>
+    {% if report.n_seam %}<p class="seam-banner">⚠ Sheet-jump seam detected — text rows step vertically at a column; the area-based score barely moves, so this banner is the signal.</p>{% endif %}
+    {% if warning %}<p class="warning"><b>Note</b> — {{ warning }}</p>{% endif %}
     <div id="ink" class="view active">
       <img src="data:image/png;base64,{{ img_ink }}">
       {% for r in regions %}
@@ -73,28 +141,43 @@
     <img id="flags" class="view" src="data:image/png;base64,{{ img_flags }}">
     <div id="cap" class="cap"></div>
   </div>
-  <div class="rail">
-    <h3>Metrics</h3>
-    <table>
-      <tr><td class="help" title="Tiles whose text-row direction departs from the local consensus — a sheet jump, drift, or rotation. Lower is better; 0 = consistent rows."><span class="sw" style="background:#ff5c5c"></span>orientation breaks</td><td>{{ report.n_orient }}</td></tr>
-      <tr><td class="help" title="Tiles whose row spacing departs from the local median — lines bunching or stretching. Lower is better."><span class="sw" style="background:#ffce5c"></span>spacing breaks</td><td>{{ report.n_spacing }}</td></tr>
-      <tr><td class="help" title="Confident-ink tiles with no row structure — mottle/noise rather than text. Lower is better."><span class="sw" style="background:#7fb0e0"></span>garble</td><td>{{ report.n_garble }}</td></tr>
-      <tr><td class="help" title="Tiles straddling a vertical seam where text rows step up/down without rotating or changing spacing — the fingerprint of a sheet jump. Lower is better."><span class="sw" style="background:#c77dff"></span>seam breaks</td><td>{{ report.n_seam }}</td></tr>
-      <tr><td class="help" title="Share of tiles with too little ink to assess (mostly blank background). NOT a quality score — high just means lots of empty area, normal for sparse text. The score judges only the confident tiles.">low-confidence</td><td>{{ '%.0f' % (report.low_conf_frac * 100) }}%</td></tr>
-    </table>
+
+  <div class="panel">
+    <div class="health">
+      <div class="n">{{ report.score }}<small> /100</small></div>
+      <div class="lbl">Trace health</div>
+      <div class="bar"><i style="width:{{ report.score }}%;background:{{ score_color }}"></i></div>
+    </div>
+    <div class="list">
+      <div class="row" title="Tiles whose text-row direction departs from the local consensus — a sheet jump, drift, or rotation. Lower is better; 0 = consistent rows."><span class="led {{ 'or' if report.n_orient else 'off' }}"></span><span>Orientation breaks</span><b{% if not report.n_orient %} class="z"{% endif %}>{{ report.n_orient }}</b></div>
+      <div class="row" title="Tiles whose row spacing departs from the local median — lines bunching or stretching. Lower is better."><span class="led {{ 'sp' if report.n_spacing else 'off' }}"></span><span>Spacing breaks</span><b{% if not report.n_spacing %} class="z"{% endif %}>{{ report.n_spacing }}</b></div>
+      <div class="row" title="Confident-ink tiles with no row structure — mottle/noise rather than text. Lower is better."><span class="led {{ 'ga' if report.n_garble else 'off' }}"></span><span>Garble</span><b{% if not report.n_garble %} class="z"{% endif %}>{{ report.n_garble }}</b></div>
+      <div class="row" title="Tiles straddling a vertical seam where text rows step up/down without rotating or changing spacing — the fingerprint of a sheet jump. Lower is better."><span class="led {{ 'se' if report.n_seam else 'off' }}"></span><span>Seam breaks</span><b{% if not report.n_seam %} class="z"{% endif %}>{{ report.n_seam }}</b></div>
+      <div class="row" title="Share of tiles with too little ink to assess (mostly blank background). NOT a quality score — high just means lots of empty area, normal for sparse text."><span></span><span>Low-confidence area</span><b>{{ '%.0f' % (report.low_conf_frac * 100) }}%</b></div>
+    </div>
+    <div class="params">
+      tile <b>{{ tile_px }} px</b>{% if gpitch_px %} · global pitch <b>{{ '%.0f' % gpitch_px }} px</b>{% endif %}<br>
+      skew <b>{{ '%.1f' % gtheta_deg }}°</b> · plumbline <b>{{ version }}</b>
+    </div>
+  </div>
+
+  <div class="panel regions">
     <h3>Flagged regions</h3>
     <table>
-      <tr><th>x</th><th>y</th><th>mode</th></tr>
-      {% for r in regions %}<tr class="regrow" data-idx="{{ loop.index0 }}" title="{{ r.detail }} — click to locate"><td>{{ r.x }}</td><td>{{ r.y }}</td><td>{{ r.mode }}</td></tr>{% endfor %}
+      <tr><th>x</th><th>y</th><th>mode</th><th>measurements</th></tr>
+      {% for r in regions %}<tr class="regrow" data-idx="{{ loop.index0 }}" title="click to locate"><td>{{ "{:,}".format(r.x) }}</td><td>{{ "{:,}".format(r.y) }}</td><td class="mode"><span class="led {{ {'orientation':'or','spacing':'sp','garble':'ga','seam':'se'}[r.mode] }}"></span>{{ r.mode }}</td><td style="color:var(--muted);font-size:13px">{{ r.detail }}</td></tr>{% endfor %}
     </table>
   </div>
+
 </main>
+
+</div>
 <script>
 const CAPS = {
   ink: "Ink prediction with every flagged tile outlined (color = failure mode). <b>Hover a box for that tile's measurements</b>; click a row in the Flagged-regions table to jump to its box. More flags means a lower score.",
   heat: "<b>Row coherence</b> per confident tile: bright = ink forms clear text rows. Near-empty / very sparse tiles are <b>dimmed</b> (not blacked out) so a lone ink sliver doesn't read brighter than real text — a dim tile can mean weak structure <i>or</i> just little ink, so cross-check the Flags view. Background (too little ink to assess) is left blank. Tick <b>overlay ink image</b> to read it against the text. Banded papyrus fibers can mimic rows, so high coherence is <b>not</b> proof of ink.",
   orient: "Dominant text-row axis per confident tile (ticks lie along the rows; orientation is measured mod 180° — the analyzer cannot know the reading direction, so no arrowheads). Tick <b>overlay ink image</b> to see them against the text they describe. A local break here is flagged as an orientation break.",
-  flags: "Flagged tiles by failure mode — <span class='sw' style='background:#ff5c5c'></span>orientation · <span class='sw' style='background:#ffce5c'></span>spacing · <span class='sw' style='background:#7fb0e0'></span>garble · <span class='sw' style='background:#c77dff'></span>seam (rows step at a sheet jump). Tiles span the analysis grid (not individual letters)."
+  flags: "Flagged tiles by failure mode — orientation (red) · spacing (lemon) · garble (sky) · seam (purple — rows step at a sheet jump). Tiles span the analysis grid (not individual letters)."
 };
 const OVERLAYABLE = {heat:1, orient:1};   // tabs that support the ink overlay toggle
 function applyOverlay(id){

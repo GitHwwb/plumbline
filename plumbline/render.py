@@ -115,7 +115,8 @@ def overlay_png(ink01, features, flags, figsize=(6, 6)) -> bytes:
     fig, ax = plt.subplots(figsize=figsize)
     ax.imshow(ink01, cmap="gray", origin="upper")
     for (x, y, w, h) in _flag_extent(features, flags):
-        ax.add_patch(plt.Rectangle((x, y), w, h, fill=False, edgecolor="red", lw=1.5))
+        ax.add_patch(plt.Rectangle((x, y), w, h, fill=False,
+                                   edgecolor="#e23227", lw=1.5))
     ax.set_axis_off()
     return _fig_to_png(fig)
 
@@ -191,7 +192,7 @@ def orientation_png(features, ink01=None) -> bytes:
     if segs:
         from matplotlib.collections import LineCollection
         ax.add_collection(LineCollection(
-            segs, colors=("#ffce5c" if ink01 is not None else "black"),
+            segs, colors=("#fcf151" if ink01 is not None else "black"),
             linewidths=1.8, capstyle="round"))
     ax.set_xlim(0, w); ax.set_ylim(h, 0)               # pixel extent, y down (no invert)
     ax.set_aspect("equal"); ax.set_axis_off()
@@ -210,8 +211,9 @@ def _flag_layers(flags):
 def flags_png(ink01, features, flags) -> bytes:
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(ink01, cmap="gray", origin="upper", alpha=0.6)
-    colors = {"orientation": "#ff5c5c", "spacing": "#ffce5c", "garble": "#7fb0e0",
-              "seam": "#c77dff"}
+    # true-neon signal palette (matches the report chrome)
+    colors = {"orientation": "#e23227", "spacing": "#fcf151", "garble": "#5acbfa",
+              "seam": "#a855f7"}
     for mode, grid in _flag_layers(flags):
         for t in features.tiles:
             if grid[t.row, t.col]:

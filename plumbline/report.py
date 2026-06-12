@@ -1,4 +1,5 @@
 import base64
+import datetime as _dt
 import json
 import math
 import os
@@ -16,17 +17,22 @@ def _b64(png: bytes) -> str:
 
 
 def _score_color(score: int) -> str:
+    # neon health palette (user-approved d_merged_neon mockup): lime / lemon / red
     if score >= 85:
-        return "#2bd47a"
+        return "#8efc4e"
     if score >= 60:
-        return "#ffce5c"
-    return "#ff5c5c"
+        return "#fcf151"
+    return "#e23227"
 
 
 def render_report(meta, ink01, features, flags, report) -> str:
     env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR),
                       autoescape=select_autoescape(["html", "j2"]))
     tmpl = env.get_template("report.html.j2")
+    tiles = features.tiles
+    tile_px = (max(max(t.y1 - t.y0 for t in tiles),
+                   max(t.x1 - t.x0 for t in tiles)) if tiles else 0)
+    gpitch = float(getattr(features, "gpitch", float("nan")))
     return tmpl.render(
         meta=meta, report=report,
         score_color=_score_color(report.score),
@@ -34,6 +40,12 @@ def render_report(meta, ink01, features, flags, report) -> str:
         # iw/ih: ORIGINAL pixel extent -- flag boxes are positioned in percent
         # of these, over the exact-extent ink PNG (no matplotlib margins).
         iw=int(ink01.shape[1]), ih=int(ink01.shape[0]),
+        # header-band + params-footer metadata
+        analyzed=_dt.date.today().strftime("%d %b %Y"),
+        tile_px=int(tile_px),
+        gpitch_px=(gpitch if math.isfinite(gpitch) else None),
+        gtheta_deg=math.degrees(float(getattr(features, "gtheta", 0.0))),
+        version=__version__,
         img_ink=_b64(ink_png(ink01)),
         img_heat=_b64(heatmap_png(features)),
         img_heat_over=_b64(heatmap_png(features, ink01)),

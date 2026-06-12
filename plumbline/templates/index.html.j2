@@ -4,36 +4,74 @@
 <meta charset="utf-8">
 <title>Plumbline — {{ meta.scroll }}</title>
 <style>
-  body { margin:0; background:#0a1521; color:#cfe0ee; font:14px/1.5 ui-monospace,Menlo,monospace; }
-  header { display:flex; justify-content:space-between; align-items:center;
-           padding:12px 18px; border-bottom:1px solid #22354a; }
-  .title { font:700 18px Georgia,serif; }
-  .sub { color:#5a7a98; font-size:12px; }
-  .toolbar { padding:10px 18px; border-bottom:1px solid #22354a; }
-  #q { width:50%; padding:6px 10px; background:#0a1521; color:#cfe0ee;
-       border:1px solid #2a3f55; border-radius:4px; font:inherit; }
-  table { width:100%; border-collapse:collapse; }
-  th,td { text-align:left; padding:7px 12px; font-size:13px; }
-  thead th { color:#7fb0e0; font-size:11px; letter-spacing:.5px; text-transform:uppercase;
-             background:#13243a; cursor:pointer; user-select:none; }
-  tbody tr { border-top:1px solid #16263a; }
-  tr.clickable { cursor:pointer; }
-  tr.clickable:hover { background:#13243a; }
-  .thumb { width:48px; height:30px; object-fit:cover; border:1px solid #22354a; border-radius:3px; display:block; }
-  .badge { color:#0a1521; padding:1px 7px; border-radius:3px; font-weight:700; }
-  .seam-badge { background:#c77dff; color:#0a1521; padding:1px 6px; border-radius:3px;
-                font-size:10px; font-weight:700; letter-spacing:.5px; margin-left:6px;
-                text-transform:uppercase; }
-  .err { color:#ff8c8c; font-size:11px; }
-  .muted { color:#5a7a98; }
+  :root{
+    --bg:#f6f2e7; --panel:#fdfbf4; --ink:#191813; --muted:#75715f;
+    --hair:#ddd6c1; --line:#191813;
+    --f-orient:#e23227; --f-spacing:#fcf151; --f-garble:#5acbfa;
+    --f-seam:#a855f7; --good:#8efc4e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);
+       font:400 15px/1.55 "Avenir Next", Avenir, "Helvetica Neue", sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .frame{max-width:1280px;margin:0 auto;padding:0 28px 44px}
+  /* ---------- header band ---------- */
+  header{border-bottom:1px solid var(--line)}
+  .hrow{display:flex;min-height:80px;flex-wrap:wrap}
+  .cell{padding:18px 22px;border-left:1px solid var(--hair);
+        display:flex;flex-direction:column;justify-content:center}
+  .cell:first-child{border-left:0;padding-left:0}
+  .k{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+     font-weight:600;margin-bottom:4px}
+  .v{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+  .logo{font-size:15px;font-weight:700;letter-spacing:.24em;text-transform:uppercase}
+  .logo small{display:block;font-weight:400;letter-spacing:.1em;color:var(--muted);
+              font-size:11px;margin-top:4px;text-transform:none}
+  /* ---------- toolbar + table ---------- */
+  .toolbar{margin:20px 0 14px}
+  #q{width:min(420px,100%);padding:8px 12px;background:var(--panel);color:var(--ink);
+     border:1px solid var(--hair);font:inherit;font-size:14px}
+  #q::placeholder{color:var(--muted)}
+  .panel{background:var(--panel);border:1px solid var(--hair)}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 14px;font-size:14px}
+  thead th{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+           color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);
+           cursor:pointer;user-select:none;white-space:nowrap}
+  tbody td{border-bottom:1px solid var(--hair);font-variant-numeric:tabular-nums}
+  tbody tr:last-child td{border-bottom:0}
+  tr.clickable{cursor:pointer}
+  tr.clickable:hover{background:#f4efdf}
+  .thumb{width:52px;height:32px;object-fit:cover;border:1px solid var(--hair);display:block}
+  .badge{display:inline-block;min-width:44px;text-align:center;color:var(--ink);
+         padding:2px 8px;font-weight:600;border:1px solid rgba(25,24,19,.40)}
+  .seam-badge{background:var(--f-seam);color:var(--ink);padding:2px 7px;
+              border:1px solid rgba(25,24,19,.40);font-size:10px;font-weight:700;
+              letter-spacing:.08em;margin-left:8px;text-transform:uppercase;
+              vertical-align:1px}
+  .err{color:var(--f-orient);font-size:11.5px;font-weight:600}
+  .muted{color:var(--muted)}
+  .led{display:inline-block;width:9px;height:9px;border-radius:50%;
+       border:1px solid rgba(25,24,19,.40);margin-right:8px;vertical-align:0}
+  .led.off{background:#cfc8b2;border-color:rgba(25,24,19,.22)}
 </style>
 </head>
 <body>
+<div class="frame">
+
 <header>
-  <span class="title">Plumbline · {{ meta.scroll }}</span>
-  <span class="sub">{{ n_total }} segments · {{ n_flagged }} flagged{% if n_errors %} · {{ n_errors }} errors{% endif %}</span>
+  <div class="hrow">
+    <div class="cell"><div class="logo">Plumbline<small>trace-quality dashboard</small></div></div>
+    <div class="cell"><div class="k">Scroll</div><div class="v">{{ meta.scroll }}</div></div>
+    <div class="cell"><div class="k">Segments</div><div class="v">{{ n_total }}</div></div>
+    <div class="cell"><div class="k">Flagged</div><div class="v">{{ n_flagged }}</div></div>
+    {% if n_errors %}<div class="cell"><div class="k">Errors</div><div class="v">{{ n_errors }}</div></div>{% endif %}
+  </div>
 </header>
+
 <div class="toolbar"><input id="q" placeholder="search segments…" oninput="filt()"></div>
+
+<div class="panel">
 <table id="t">
 <thead><tr>
   <th>view</th>
@@ -51,15 +89,18 @@
   <td>{% if r.thumb_b64 %}<img class="thumb" src="data:image/png;base64,{{ r.thumb_b64 }}">{% endif %}</td>
   <td>{{ r.seg_id }}{% if r.error %} <span class="err">not evaluated</span>{% endif %}{% if r.n_seam %} <span class="seam-badge" title="text rows step vertically at a column — the fingerprint of a sheet jump; the score barely moves, so seam segments sort to the top">seam</span>{% endif %}</td>
   <td data-v="{{ r.score }}"><span class="badge" style="background:{{ score_color(r.score) }}">{{ r.score }}</span></td>
-  <td data-v="{{ r.n_orient }}" class="{{ '' if r.n_orient else 'muted' }}">{{ r.n_orient }}</td>
-  <td data-v="{{ r.n_spacing }}" class="{{ '' if r.n_spacing else 'muted' }}">{{ r.n_spacing }}</td>
-  <td data-v="{{ r.n_garble }}" class="{{ '' if r.n_garble else 'muted' }}">{{ r.n_garble }}</td>
-  <td data-v="{{ r.n_seam }}" class="{{ '' if r.n_seam else 'muted' }}">{{ r.n_seam }}</td>
+  <td data-v="{{ r.n_orient }}"><span class="led {{ 'on' if r.n_orient else 'off' }}"{% if r.n_orient %} style="background:var(--f-orient)"{% endif %}></span>{% if r.n_orient %}{{ r.n_orient }}{% else %}<span class="muted">0</span>{% endif %}</td>
+  <td data-v="{{ r.n_spacing }}"><span class="led {{ 'on' if r.n_spacing else 'off' }}"{% if r.n_spacing %} style="background:var(--f-spacing)"{% endif %}></span>{% if r.n_spacing %}{{ r.n_spacing }}{% else %}<span class="muted">0</span>{% endif %}</td>
+  <td data-v="{{ r.n_garble }}"><span class="led {{ 'on' if r.n_garble else 'off' }}"{% if r.n_garble %} style="background:var(--f-garble)"{% endif %}></span>{% if r.n_garble %}{{ r.n_garble }}{% else %}<span class="muted">0</span>{% endif %}</td>
+  <td data-v="{{ r.n_seam }}"><span class="led {{ 'on' if r.n_seam else 'off' }}"{% if r.n_seam %} style="background:var(--f-seam)"{% endif %}></span>{% if r.n_seam %}{{ r.n_seam }}{% else %}<span class="muted">0</span>{% endif %}</td>
   <td data-v="{{ r.low_conf_frac }}" class="muted">{{ '%.0f' % (r.low_conf_frac * 100) }}%</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
+</div>
+
+</div>
 <script>
 function filt(){
   var q = document.getElementById('q').value.toLowerCase();

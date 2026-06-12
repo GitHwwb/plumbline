@@ -38,6 +38,18 @@ def test_write_report_and_json(tmp_path):
     assert "regions" in data and isinstance(data["regions"], list)
 
 
+def test_report_theme_is_cream_neon():
+    # Design lock (user-approved mockup d_merged_neon): Avenir on cream with
+    # the true-neon signal palette -- red/lemon/sky/purple for the four flag
+    # modes, lime for health. Pin the tokens so a refactor can't silently
+    # regress the theme.
+    f, feats, flags, rep = _bundle()
+    html = render_report({"segment_id": "s", "scroll": "S"}, f, feats, flags, rep)
+    assert "Avenir" in html
+    for hexcode in ("#e23227", "#fcf151", "#5acbfa", "#a855f7", "#8efc4e"):
+        assert hexcode in html, f"missing theme token {hexcode}"
+
+
 def test_render_report_interactive_flag_boxes():
     # The default view draws flag boxes as live positioned elements over an
     # exact-extent ink PNG: each box carries a hover tooltip with the tile's
