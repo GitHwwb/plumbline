@@ -3,6 +3,7 @@ import glob
 import fnmatch
 import warnings
 from typing import List
+from plumbline.io import _is_zarr
 from plumbline.model import SegmentInputs
 
 _INK_PATTERNS = ["*prediction*", "*result*", "*inklabels*"]
@@ -11,8 +12,12 @@ _IMG_EXTS = (".png", ".tif", ".tiff")
 
 
 def _images_in(folder):
+    """Loadable inputs in `folder`: image files plus Zarr store directories
+    (`run` accepts both, so batch discovery must too -- a segments folder of
+    Zarr stores was previously skipped wholesale)."""
     return sorted(f for f in glob.glob(os.path.join(folder, "*"))
-                  if os.path.isfile(f) and f.lower().endswith(_IMG_EXTS))
+                  if (os.path.isfile(f) and f.lower().endswith(_IMG_EXTS))
+                  or (os.path.isdir(f) and _is_zarr(f)))
 
 
 def _matches_any(name, patterns):

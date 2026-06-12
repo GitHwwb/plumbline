@@ -55,6 +55,18 @@ def _smoothstep(x, lo, hi):
     return t * t * (3.0 - 2.0 * t)
 
 
+def _downsample_mean(a, k):
+    """k x k block-mean downsample for the DISPLAY underlays. Striding
+    (a[::k, ::k]) keeps every k-th row/column, so a 1-px stroke survives only
+    when its index happens to be a multiple of k -- thin strokes flickered in
+    and out of the previews. Averaging keeps them visible (proportionally dim)."""
+    if k <= 1:
+        return a
+    h, w = a.shape
+    a = a[:h - h % k, :w - w % k]
+    return a.reshape(h // k, k, w // k, k).mean(axis=(1, 3))
+
+
 def _coherence_display(band, density=None):
     """Map raw band_strength -> a stable [0,1] display value (DISPLAY-ONLY).
 
@@ -73,11 +85,6 @@ def _coherence_display(band, density=None):
     return disp
 
 
-def _cell_to_pixel(features, r, c):
-    t = next(t for t in features.tiles if t.row == r and t.col == c)
-    return (t.x0 + t.x1) // 2, (t.y0 + t.y1) // 2
-
-
 def _flag_extent(features, flags):
     rects = []
     fm = flags.any_flag
@@ -85,6 +92,23 @@ def _flag_extent(features, flags):
         if fm[t.row, t.col]:
             rects.append((t.x0, t.y0, t.x1 - t.x0, t.y1 - t.y0))
     return rects
+
+
+def ink_png(ink01, max_px=2000) -> bytes:
+    """The raw ink image as an EXACT-extent grayscale PNG (pure PIL): pixel
+    (0,0) IS array (0,0) and the PNG spans precisely the array, so the report
+    can position flag boxes over it in percent coordinates and they line up by
+    construction -- matplotlib's bbox_inches='tight' margins would skew them.
+    Block-mean downsampled to <= max_px on the long side (trimming at most
+    k-1 px ~ 0.1% at the right/bottom edge, far below a tile)."""
+    from PIL import Image
+    a = np.asarray(ink01, dtype=float)
+    k = max(1, int(np.ceil(max(a.shape) / max_px)))
+    a = np.clip(_downsample_mean(a, k), 0.0, 1.0)
+    img = Image.fromarray((a * 255.0 + 0.5).astype("uint8"), mode="L")
+    buf = _io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 def overlay_png(ink01, features, flags, figsize=(6, 6)) -> bytes:
@@ -118,7 +142,7 @@ def heatmap_png(features, ink01=None) -> bytes:
     if ink01 is not None:
         a = np.asarray(ink01, dtype=float)
         k = max(1, int(round(max(a.shape) / 2000)))      # downsample for display only
-        a = np.clip(a[::k, ::k], 0.0, 1.0)
+        a = np.clip(_downsample_mean(a, k), 0.0, 1.0)
         marks = np.zeros(a.shape + (4,)); marks[..., :3] = 1.0; marks[..., 3] = a * 0.9
         ax.imshow(marks, extent=[0, w, h, 0], aspect="equal", interpolation="nearest")
     fig.colorbar(im, ax=ax, fraction=0.046, label="row coherence (0-1)")
@@ -137,7 +161,7 @@ def orientation_png(features, ink01=None) -> bytes:
     if ink01 is not None:
         a = np.asarray(ink01, dtype=float)
         k = max(1, int(round(max(a.shape) / 2000)))      # downsample for display only
-        a = np.clip(a[::k, ::k], 0.0, 1.0)
+        a = np.clip(_downsample_mean(a, k), 0.0, 1.0)
         ax.imshow(a, cmap="gray", extent=[0, w, h, 0], aspect="equal",
                   interpolation="nearest")
     # arrow length ~0.4 tile so arrows read as row-direction ticks, not a dense field
@@ -182,12 +206,29 @@ def flags_png(ink01, features, flags) -> bytes:
     return _fig_to_png(fig)
 
 
+def _tile_detail(features, t):
+    """One-line human summary of a tile's measurements, for hover tooltips and
+    the JSON sidecar: writing-direction angle, row pitch (or an em-dash when no
+    periodic peak exists), rowness (band_strength) and ink fraction."""
+    th = float(np.degrees(features.theta[t.row, t.col]))
+    p = float(features.pitch[t.row, t.col])
+    band = float(features.band_strength[t.row, t.col])
+    d = float(features.density[t.row, t.col])
+    pitch_s = f"{p:.0f}px" if np.isfinite(p) else "—"
+    return f"angle {th:.0f}° · row pitch {pitch_s} · rowness {band:.2f} · ink {d:.0%}"
+
+
 def flagged_regions(features, flags):
-    """Flat list of flagged cells as {x, y, mode} in pixel coordinates."""
+    """Flat list of flagged cells in pixel coordinates: center {x, y}, the full
+    tile box {x0, y0, x1, y1} (so a JSON consumer can draw/crop the flagged
+    area without knowing the tile size), the flag mode, and a human-readable
+    `detail` line with the tile's measurements."""
     out = []
     for mode, grid in _flag_layers(flags):
         for t in features.tiles:
             if grid[t.row, t.col]:
-                x, y = _cell_to_pixel(features, t.row, t.col)
-                out.append({"x": int(x), "y": int(y), "mode": mode})
+                out.append({"x": int((t.x0 + t.x1) // 2), "y": int((t.y0 + t.y1) // 2),
+                            "x0": int(t.x0), "y0": int(t.y0),
+                            "x1": int(t.x1), "y1": int(t.y1), "mode": mode,
+                            "detail": _tile_detail(features, t)})
     return out

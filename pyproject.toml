@@ -1,6 +1,7 @@
 [project]
 name = "plumbline"
-version = "0.1.0"
+# version lives in plumbline/__init__.py only (was duplicated here and drifting)
+dynamic = ["version"]
 description = "Trace-quality reports for Vesuvius Challenge scroll segments"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
@@ -28,6 +29,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["plumbline"]
+
+[tool.setuptools.dynamic]
+version = { attr = "plumbline.__version__" }
 
 [tool.setuptools.package-data]
 plumbline = ["templates/*.j2"]

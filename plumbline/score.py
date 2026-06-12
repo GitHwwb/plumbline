@@ -175,7 +175,16 @@ def flag_garble(features, band_thresh=0.10):
     inside one giant stroke/gap and are irreducibly featureless), clean dense
     text >1.1, synthetic noise median ~0.05. So 0.10 leaves real text mostly
     unflagged (garble_frac ~0.3, well under the 0.5 contract) while still
-    flagging >=half of noise tiles so input_warning fires."""
+    flagging >=half of noise tiles so input_warning fires.
+
+    2026-06-11 photograph guard: those frag1 'irreducibly featureless' tiles
+    turned out to be GLOW victims -- the papyrus background contributed ~97% of
+    the tile mean, drowning detected rows (pitch 199px!) in the std/mean ratio.
+    band_contrast now subtracts the tile's darkest-quartile background first
+    (predictions with black background are byte-identical), so frag1 garble_frac
+    dropped ~0.3 -> ~0 and the s5 prediction's diffuse-probability-floor tiles
+    (garble 75 -> 0) stopped flagging. The 0.10 threshold itself is unchanged
+    and still flags structureless noise (guarded by tests)."""
     return features.confidence & (features.band_strength < band_thresh)
 
 

@@ -27,3 +27,20 @@ def test_find_segments_skips_folder_with_only_mask(tmp_path):
     s = tmp_path / "onlymask"; s.mkdir()
     _png(s / "x_mask.png", 255)
     assert find_segments(str(tmp_path)) == []
+
+
+def test_find_segments_picks_zarr_store_as_ink(tmp_path):
+    # `run` accepts Zarr anywhere it accepts a PNG, but batch discovery only
+    # globbed image-file extensions -- a segments folder of Zarr stores was
+    # silently skipped. Stores join the same name-pattern matching as images.
+    import pytest
+    zarr = pytest.importorskip("zarr")
+    s = tmp_path / "segz"; s.mkdir()
+    z = zarr.open(str(s / "prediction.zarr"), mode="w", shape=(64, 64),
+                  dtype="uint8")
+    z[:] = 100
+    _png(s / "segz_mask.png", 255)
+    segs = find_segments(str(tmp_path))
+    assert [x.seg_id for x in segs] == ["segz"]
+    assert segs[0].ink_path.endswith("prediction.zarr")
+    assert segs[0].mask_path.endswith("segz_mask.png")

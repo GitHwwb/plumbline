@@ -1,8 +1,17 @@
 import json
 import numpy as np
+import pytest
 from PIL import Image
+from plumbline import __version__
 from plumbline.synthetic import striped_field, garble_patch
 from plumbline.cli import main
+
+
+def test_cli_version_flag(capsys):
+    with pytest.raises(SystemExit) as e:
+        main(["--version"])
+    assert e.value.code == 0
+    assert __version__ in capsys.readouterr().out
 
 
 def test_cli_run_produces_html_and_json(tmp_path):

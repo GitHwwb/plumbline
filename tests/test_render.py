@@ -29,6 +29,59 @@ def test_flagged_regions_lists_pixel_locations():
     assert r["mode"] in {"orientation", "spacing", "garble"}
 
 
+def test_flagged_regions_include_human_detail():
+    # Hover tooltips need per-tile measurements in words: every region carries
+    # a "detail" string with the tile's angle / row pitch / rowness / ink
+    # fraction, so a reviewer can see WHY a box exists without reading JSON.
+    f, feats, flags = _setup()
+    for r in flagged_regions(feats, flags):
+        assert "detail" in r and isinstance(r["detail"], str)
+        assert "angle" in r["detail"] and "rowness" in r["detail"]
+
+
+def test_ink_png_exact_extent():
+    # The interactive overlay positions flag boxes in PERCENT coordinates, so
+    # the base PNG must span exactly the array extent -- matplotlib's
+    # bbox_inches='tight' adds pad_inches margins, which would skew every box.
+    # ink_png is a pure-PIL render: pixel (0,0) IS array (0,0).
+    from PIL import Image
+    import io as _io
+    from plumbline.render import ink_png
+    a = np.zeros((100, 50)); a[10, :] = 1.0
+    png = ink_png(a)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    img = Image.open(_io.BytesIO(png))
+    assert img.size == (50, 100)                  # PIL size is (w, h): exact extent
+    big = np.zeros((4000, 1000))
+    img2 = Image.open(_io.BytesIO(ink_png(big, max_px=2000)))
+    assert max(img2.size) <= 2000                 # downsampled for display
+
+
+def test_flagged_regions_include_tile_extents():
+    # A JSON consumer needs the flagged BOX, not just its center: without
+    # x0/y0/x1/y1 a downstream pipeline cannot draw or crop the flagged area
+    # (the tile size isn't in the sidecar either).
+    f, feats, flags = _setup()
+    for r in flagged_regions(feats, flags):
+        assert {"x0", "y0", "x1", "y1"} <= set(r.keys())
+        assert r["x0"] <= r["x"] <= r["x1"]
+        assert r["y0"] <= r["y"] <= r["y1"]
+        assert r["x1"] - r["x0"] > 0 and r["y1"] - r["y0"] > 0
+
+
+def test_display_downsample_keeps_thin_strokes():
+    # Stride downsampling (a[::k, ::k]) keeps every k-th row, so a 1-px stroke
+    # survives only if its row index happens to be a multiple of k -- strokes
+    # flicker in and out of the report previews. Block-mean pooling keeps them
+    # visible (dimmed in proportion, which is the honest rendering).
+    from plumbline.render import _downsample_mean
+    a = np.zeros((100, 100)); a[3, :] = 1.0       # stroke on a non-multiple row
+    d = _downsample_mean(a, 4)
+    assert d.shape == (25, 25)
+    assert d.max() > 0, "thin stroke must survive display downsampling"
+    assert np.allclose(_downsample_mean(a, 1), a)  # k<=1 is the identity
+
+
 def test_coherence_display_bounded_and_compressed():
     from plumbline.render import _coherence_display
     bands = np.array([0.0, 0.05, 0.9, 3.0, 50.0])   # empty, noise, text, sliver, extreme

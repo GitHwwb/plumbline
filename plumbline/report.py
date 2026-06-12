@@ -1,8 +1,10 @@
 import base64
 import json
+import math
 import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from plumbline.render import (overlay_png, heatmap_png, orientation_png,
+from plumbline import __version__
+from plumbline.render import (ink_png, heatmap_png, orientation_png,
                               flags_png, flagged_regions)
 from plumbline.score import input_warning
 
@@ -29,7 +31,10 @@ def render_report(meta, ink01, features, flags, report) -> str:
         meta=meta, report=report,
         score_color=_score_color(report.score),
         regions=flagged_regions(features, flags),
-        img_overlay=_b64(overlay_png(ink01, features, flags)),
+        # iw/ih: ORIGINAL pixel extent -- flag boxes are positioned in percent
+        # of these, over the exact-extent ink PNG (no matplotlib margins).
+        iw=int(ink01.shape[1]), ih=int(ink01.shape[0]),
+        img_ink=_b64(ink_png(ink01)),
         img_heat=_b64(heatmap_png(features)),
         img_heat_over=_b64(heatmap_png(features, ink01)),
         img_orient=_b64(orientation_png(features)),
@@ -44,7 +49,27 @@ def write_report(path, meta, ink01, features, flags, report):
         fh.write(render_report(meta, ink01, features, flags, report))
 
 
-def write_json(path, meta, features, flags, report):
+def write_json(path, meta, features, flags, report, params=None):
+    """Write the JSON sidecar. Besides the score/flag counts/regions it records
+    the run configuration needed to reproduce or diagnose a result: tool
+    version, the tile size actually used (auto-sizing picks a different tile
+    per image), grid shape, and the global skew/pitch estimates. `params` lets
+    the caller add settings only it knows (e.g. the CLI's overlap)."""
+    tiles = features.tiles
+    tile_px = (max(max(t.y1 - t.y0 for t in tiles),
+                   max(t.x1 - t.x0 for t in tiles)) if tiles else None)
+    gpitch = float(getattr(features, "gpitch", float("nan")))
+    run_params = {
+        "plumbline_version": __version__,
+        "tile_px": tile_px,
+        "grid": [features.n_rows, features.n_cols],
+        "gtheta_rad": float(getattr(features, "gtheta", 0.0)),
+        # NaN (aperiodic input, no per-tile median pitch) must serialize as
+        # null: the bare NaN token json.dump would emit is not strict JSON.
+        "gpitch_px": gpitch if math.isfinite(gpitch) else None,
+    }
+    if params:
+        run_params.update(params)
     payload = {
         "segment_id": meta.get("segment_id"),
         "score": report.score,
@@ -53,7 +78,8 @@ def write_json(path, meta, features, flags, report):
         "n_garble": report.n_garble,
         "n_seam": report.n_seam,
         "low_conf_frac": report.low_conf_frac,
+        "params": run_params,
         "regions": flagged_regions(features, flags),
     }
     with open(path, "w", encoding="utf-8") as fh:
-        json.dump(payload, fh, indent=2)
+        json.dump(payload, fh, indent=2, allow_nan=False)

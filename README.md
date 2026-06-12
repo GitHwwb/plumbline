@@ -64,7 +64,10 @@ plumbline run path/to/<id>_prediction.png \
 - `ink` (positional): the ink-prediction PNG/TIF, in the segment's flattened frame.
 - `--mask`: the segment's `flat_mask` (valid-area mask). Optional; defaults to the whole image.
 - `-o/--output`: HTML report path (default `report.html`).
-- `--json`: also write a JSON sidecar (score + flagged regions) for batch pipelines.
+- `--json`: also write a JSON sidecar for batch pipelines — the score, every
+  flagged region (center + full pixel box), and a `params` block recording the
+  run configuration (tool version, tile size actually used, grid shape, global
+  skew/pitch, overlap) so results are reproducible.
 - `--tile` / `--overlap`: analysis tile size (px) and overlap fraction. **`--tile`
   defaults to auto** — Plumbline estimates the text scale and picks a tile that spans
   several rows; pass an explicit value only to override (a tile must span several text
@@ -99,11 +102,14 @@ This writes `out/index.html` — a self-contained, sortable, searchable table
 (thumbnail · segment · trace-health · flag counts · low-confidence%), sorted
 worst-first — plus one `out/<id>.html` report per segment. Click any row to open
 its full report. For very large runs, `--no-reports` and `--no-thumbnails` keep
-output small and fast.
+output small and fast, and `--jobs N` evaluates N segments in parallel (results
+are identical to a sequential run — segments are independent).
 
 Ink files are auto-detected by name (`*prediction*`, `*result*`, `*inklabels*`);
-masks by `*flat_mask*`/`*mask*`. Segments with no usable image are skipped; a
-segment that fails to evaluate is marked "not evaluated" and never aborts the run.
+masks by `*flat_mask*`/`*mask*`. Zarr/OME-Zarr stores (`*.zarr` directories)
+are matched by the same name patterns, so a folder of Zarr segments batches the
+same way. Segments with no usable image are skipped; a segment that fails to
+evaluate is marked "not evaluated" and never aborts the run.
 
 ## The four views (plus seam flags)
 
@@ -141,6 +147,12 @@ jumps sharply *and* a vertical shift substantially improves the strips' alignmen
 real step, not a wrap-lag coincidence on continuous text). It catches the pure vertical
 sheet-jump that orientation/spacing/garble structurally cannot.
 
+Because a seam flags only the few tiles straddling one column, it barely moves the
+area-based score — a seamed segment can still score 95+. It is therefore called out
+*categorically* instead: a **⚠ sheet-jump seam** banner on the report header, and a
+**seam badge plus top-tier placement** in the batch dashboard's default ordering, so
+a sheet jump can't hide behind a healthy-looking number.
+
 ## Interpreting scores — what a low score does (and doesn't) mean
 
 Plumbline is a **heuristic triage signal, not a verdict.** It assumes ink appears
@@ -149,28 +161,37 @@ as **rows of text** (ink banded into lines separated by gaps), so a low score me
 "this segment is definitely bad." Two ways to be misled:
 
 - **Give it a real ink *prediction* — and confirm you can see letters.** Plumbline
-  needs a dense ink-detection probability map (continuous text strokes). The wrong
-  input fools it: a sparse label mask of isolated letter-blobs (`inklabels.png`)
-  floods it with false flags, and a bare **surface render** (papyrus fibers, no ink)
-  can even score *high* if the fibers happen to band like rows — because Plumbline
-  measures row-banding, not "is this actually ink." It now prints a warning when
-  an input looks dense-but-structureless (the surface/label signature), but a
-  fiber-aligned surface can still slip past, so eyeball that letters are present.
-- **Very large, sparse lettering is below regime.** The garble check needs several
-  text rows per tile; an image of a few giant letters — where no reasonable tile
-  spans multiple rows — over-flags on the garble axis (tiles wholly inside one giant
-  stroke or gap are genuinely featureless). Auto tile-sizing handles ordinary scroll
-  text; this is a known edge case, not a verdict on the segment.
+  is calibrated for ink-detection probability maps. A bare **surface render**
+  (papyrus fibers, no ink) can score *high* if the fibers happen to band like rows —
+  because Plumbline measures row-banding, not "is this actually ink." It prints a
+  warning when an input looks dense-but-structureless, but a fiber-aligned surface
+  can slip past, so eyeball that letters are present. Rowness is measured on the
+  ink *above* each tile's background level (the darkest quartile), so a photograph's
+  gray papyrus glow — or a model's diffuse probability floor — no longer drowns
+  legible rows; the flip side is that the dense-but-structureless warning is *less*
+  likely to fire on photo-like mottle, so the eyeball check still matters.
+- **Very large, sparse lettering is near the edge of regime.** The garble check
+  needs several text rows per tile; tiles wholly inside one giant stroke or gap are
+  genuinely featureless. Auto tile-sizing plus background-relative rowness handle
+  the giant-letter fragments we have (the Fragment 1 infrared, once a heavy
+  garble over-flagger, now scores 98/100) — but a few enormous letters remain a
+  stress case, not the design center.
+- **Input scaling matters.** Integer images are normalized by their full bit-depth
+  range, so 8-bit data saved in a 16-bit container reads as nearly black (Plumbline
+  warns at load when an image uses <1% of its range). Float images with values above
+  1 are divided by their own per-image maximum, so scores from unusually-scaled
+  float inputs aren't strictly comparable across files — feed predictions already
+  in [0, 1] for apples-to-apples ranking.
 
 Bottom line: trust Plumbline to *rank and surface* suspect regions for review;
 don't treat the number as a final quality judgement.
 
 **Detection modes:** Plumbline flags rotation/drift (orientation breaks), row-spacing jumps,
-garble, and — as of this revision — a **pure vertical sheet-jump** (`seam`: text rows
-stepping up/down at a column without rotating or changing spacing). The seam detector's
-thresholds are calibrated on a handful of real images; its clean-text false-positive margin
-is real but narrow (see `docs/OPEN_ITEMS.md` §D and `HANDOFF_UPDATE.md`). Tile size
-auto-adapts to text scale; pass `--tile` to override.
+garble, and a **pure vertical sheet-jump** (`seam`: text rows stepping up/down at a column
+without rotating or changing spacing). The seam detector's thresholds are calibrated on a
+handful of real images; its clean-text false-positive margin is real but narrow, so treat a
+lone seam flag as "look here", not proof. Tile size auto-adapts to text scale; pass
+`--tile` to override.
 
 ## Validation
 
@@ -225,7 +246,8 @@ flattened ink imagery with no data-server credentials needed:
 ships a Scroll 5 model **prediction** (`Images/predictions_*.png`) alongside hand-drawn
 labels, and [`hendrikschilling/Vesuvius-Grandprize-Winner`](https://github.com/hendrikschilling/Vesuvius-Grandprize-Winner)
 has the Grand-Prize banner ink **labels** (`all_labels/*.png`). Plumbline scores the
-Scroll 5 prediction **85/100** (orientation breaks 0) and the real labels **85–100**
+Scroll 5 prediction **99/100** (1 orientation break, seam 0; the model's diffuse
+probability floor no longer reads as garble) and the real labels **85–100**
 across two scrolls — the redesigned core holds up on real papyrus. Large flattened
 segments (hundreds of megapixels) load fine. The `--segment-id` fetch path
 (`plumbline/io.py:fetch_segment`) remains a stub for the data-server `vesuvius` API.

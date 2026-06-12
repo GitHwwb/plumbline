@@ -23,9 +23,14 @@ def render_index(rows, meta) -> str:
     env = Environment(loader=FileSystemLoader(_TEMPLATE_DIR),
                       autoescape=select_autoescape(["html", "j2"]))
     tmpl = env.get_template("index.html.j2")
-    # worst-health first, but float un-evaluatable (error) rows to the bottom so
-    # a failed segment isn't mistaken for the lowest-quality one.
-    ordered = sorted(rows, key=lambda r: (r.error is not None, r.score, r.seg_id))
+    # Worst-health first, but: (a) segments with a detected SEAM form their own
+    # TOP tier -- a sheet jump flags only the few tiles straddling one column,
+    # so a seamed segment can score 95+ and would otherwise sort below merely
+    # noisy ones, burying the defect the tool exists to surface (the score
+    # itself stays area-based by design); (b) un-evaluatable (error) rows float
+    # to the bottom so a failed segment isn't mistaken for the lowest-quality one.
+    ordered = sorted(rows, key=lambda r: (r.error is not None, r.n_seam == 0,
+                                          r.score, r.seg_id))
     n_flagged = sum(1 for r in ordered
                     if r.error is None
                     and (r.n_orient + r.n_spacing + r.n_garble + r.n_seam) > 0)

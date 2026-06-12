@@ -46,8 +46,27 @@ def band_contrast(img, theta=0.0, profile=None):
 
     `profile` lets a caller that ALREADY computed projection_profile(img, theta)
     pass it in to avoid a second rotation (the dominant cost on large skewed
-    strips); when None it is computed as before, so default behaviour is identical."""
-    p = projection_profile(img, theta) if profile is None else np.asarray(profile)
+    strips); when None it is computed as before, so default behaviour is identical.
+
+    PHOTOGRAPH GUARD (background glow): on a PHOTO (frag1 IR), the papyrus
+    itself glows mid-gray and contributes most of the tile mean -- measured on
+    the flagged frag1 tiles: mean 0.414 of which background 0.400, so clear
+    letter rows (pitch detected at 199px!) read band 0.071 < the 0.10 garble
+    line. When the tile's 25th-percentile pixel (a robust background estimate;
+    ink rarely covers >75% of a tile) exceeds 0.05, subtract it and clip, so
+    rowness judges the ink ABOVE the glow. The structure question is asked
+    pixel-level on purpose: glow-noise stays structureless after subtraction
+    (still garbles -- the input_warning depends on that), while glow-text
+    becomes clean rows. Ink PREDICTIONS have near-black background (p25 ~ 0),
+    take the bg <= 0.05 branch, and keep the OLD definition byte-identical --
+    every calibrated threshold (garble 0.10, the seam detector's row_gate, the
+    coherence display curve) and the profile= fast path are tuned on it."""
+    a01 = to01(img)
+    bg = float(np.percentile(a01, 25))
+    if bg > 0.05:
+        p = projection_profile(np.clip(a01 - bg, 0.0, 1.0), theta)
+    else:
+        p = projection_profile(img, theta) if profile is None else np.asarray(profile)
     det = _linear_detrend(p)
     # Floor the denominator at a minimum mean-ink level. std/mean explodes as
     # mean->0, so near-empty / sparse single-band tiles (e.g. one catching only the
@@ -241,8 +260,36 @@ def estimate_scale_and_skew(ink, mask=None, k_rows=4.0, target=1000.0):
 
 
 def ink_density(img, thresh=0.25):
-    """Fraction of pixels above an ink threshold."""
+    """Fraction of pixels above an ink threshold.
+
+    PHOTOGRAPH GUARD (same pattern as band_contrast): on a photo the parchment
+    glow itself clears the fixed 0.25 cut, so a tile of mostly bare parchment
+    read 'ink 76%' -- the number meant '76% of the tile is not void'. When the
+    tile's 25th-percentile pixel (robust background estimate) exceeds 0.05,
+    ink is counted RELATIVE to that background instead: pixels above
+    bg + max(0.25 * (p99 - bg), 0.05). The threshold scales to the tile's own
+    dynamic range (p99, not max, so a hot pixel can't stretch it) and the
+    0.05 floor keeps featureless parchment from counting its own noise tail
+    as ink (no brighter layer -> density ~0 -> the tile falls toward
+    low-confidence, the honest 'too little ink to judge' outcome).
+    Predictions (bg ~ 0) take the fixed-threshold branch byte-identically --
+    the 0.02 confidence gate and the display-dimming curve are calibrated on it.
+
+    The background is the MEDIAN (not band_contrast's p25): the parchment is
+    usually the tile's dominant layer, so the median lands on it even when a
+    third VOID layer (black beyond the fragment edge) occupies up to half the
+    tile -- exactly the frag1 edge tile that read 'ink 76%'. A UNIFORM bright
+    tile (no layer above background, hi - bg < 0.10) is disambiguated by
+    absolute level: a solid prediction stroke is high-probability (> 0.5) and
+    counts as ink; mid-gray parchment glow does not."""
     a = to01(img)
+    bg = float(np.median(a))
+    if bg > 0.05:
+        hi = float(np.percentile(a, 99))
+        if hi - bg < 0.10:                  # uniform field: solid ink vs bare glow
+            return float((a > max(thresh, 0.5)).mean())
+        t = bg + max(0.25 * (hi - bg), 0.05)
+        return float((a > t).mean())
     return float((a > thresh).mean())
 
 
@@ -269,6 +316,15 @@ def analyze_tiles(ink, mask=None, tile=None, overlap=0.5,
             continue
         cov = float(mask[t.y0:t.y1, t.x0:t.x1].mean())
         d = ink_density(sub)
+        # FULL-RES sweep, deliberately. A downsampled-copy orientation sweep
+        # (block-mean to 512px; ~13x fewer rotated pixels) was tried 2026-06-11
+        # and REVERTED: on the real-IR fragment the giant-sparse-glyph tiles
+        # have a near-FLAT sharpness objective (values differ in the 6th
+        # decimal), and the copy flipped the argmax -16.7deg -> 0deg on 14
+        # tiles -- band at the flipped angle pushed garble_frac 0.17 -> 0.41.
+        # The flips were CONFIDENT (copy reliability 0.35-0.56, overlapping
+        # healthy tiles), so no reliability gate separates them. Any future
+        # speedup here must re-validate against tests/test_real_ir.py.
         th, rl = dominant_orientation(sub, seed=gtheta, return_reliability=True)
         theta[t.row, t.col] = th
         rel[t.row, t.col] = rl

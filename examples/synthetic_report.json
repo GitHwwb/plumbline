@@ -6,206 +6,416 @@
   "n_garble": 2,
   "n_seam": 30,
   "low_conf_frac": 0.0,
+  "params": {
+    "plumbline_version": "0.1.0",
+    "tile_px": 128,
+    "grid": [
+      15,
+      15
+    ],
+    "gtheta_rad": 0.0,
+    "gpitch_px": 40.0
+  },
   "regions": [
     {
       "x": 64,
       "y": 192,
-      "mode": "orientation"
+      "x0": 0,
+      "y0": 128,
+      "x1": 128,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.28 \u00b7 ink 21%"
     },
     {
       "x": 128,
       "y": 192,
-      "mode": "orientation"
+      "x0": 64,
+      "y0": 128,
+      "x1": 192,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.27 \u00b7 ink 19%"
     },
     {
       "x": 192,
       "y": 192,
-      "mode": "orientation"
+      "x0": 128,
+      "y0": 128,
+      "x1": 256,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.49 \u00b7 ink 21%"
     },
     {
       "x": 256,
       "y": 192,
-      "mode": "orientation"
+      "x0": 192,
+      "y0": 128,
+      "x1": 320,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 54px \u00b7 rowness 1.31 \u00b7 ink 19%"
     },
     {
       "x": 320,
       "y": 192,
-      "mode": "orientation"
+      "x0": 256,
+      "y0": 128,
+      "x1": 384,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 54px \u00b7 rowness 1.38 \u00b7 ink 15%"
     },
     {
       "x": 384,
       "y": 192,
-      "mode": "orientation"
+      "x0": 320,
+      "y0": 128,
+      "x1": 448,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 41px \u00b7 rowness 1.31 \u00b7 ink 17%"
     },
     {
       "x": 448,
       "y": 192,
-      "mode": "orientation"
+      "x0": 384,
+      "y0": 128,
+      "x1": 512,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.28 \u00b7 ink 18%"
     },
     {
       "x": 512,
       "y": 192,
-      "mode": "orientation"
+      "x0": 448,
+      "y0": 128,
+      "x1": 576,
+      "y1": 256,
+      "mode": "orientation",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.67 \u00b7 ink 22%"
     },
     {
       "x": 320,
       "y": 704,
-      "mode": "garble"
+      "x0": 256,
+      "y0": 640,
+      "x1": 384,
+      "y1": 768,
+      "mode": "garble",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 53px \u00b7 rowness 0.08 \u00b7 ink 38%"
     },
     {
       "x": 384,
       "y": 704,
-      "mode": "garble"
+      "x0": 320,
+      "y0": 640,
+      "x1": 448,
+      "y1": 768,
+      "mode": "garble",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 39px \u00b7 rowness 0.07 \u00b7 ink 38%"
     },
     {
       "x": 512,
       "y": 64,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 0,
+      "x1": 576,
+      "y1": 128,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.79 \u00b7 ink 15%"
     },
     {
       "x": 576,
       "y": 64,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 0,
+      "x1": 640,
+      "y1": 128,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.29 \u00b7 ink 14%"
     },
     {
       "x": 512,
       "y": 128,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 64,
+      "x1": 576,
+      "y1": 192,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 41px \u00b7 rowness 0.63 \u00b7 ink 18%"
     },
     {
       "x": 576,
       "y": 128,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 64,
+      "x1": 640,
+      "y1": 192,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.83 \u00b7 ink 19%"
     },
     {
       "x": 512,
       "y": 192,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 128,
+      "x1": 576,
+      "y1": 256,
+      "mode": "seam",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.67 \u00b7 ink 22%"
     },
     {
       "x": 576,
       "y": 192,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 128,
+      "x1": 640,
+      "y1": 256,
+      "mode": "seam",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.34 \u00b7 ink 21%"
     },
     {
       "x": 512,
       "y": 256,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 192,
+      "x1": 576,
+      "y1": 320,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 37px \u00b7 rowness 0.73 \u00b7 ink 20%"
     },
     {
       "x": 576,
       "y": 256,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 192,
+      "x1": 640,
+      "y1": 320,
+      "mode": "seam",
+      "detail": "angle 21\u00b0 \u00b7 row pitch 39px \u00b7 rowness 1.25 \u00b7 ink 18%"
     },
     {
       "x": 512,
       "y": 320,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 256,
+      "x1": 576,
+      "y1": 384,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.74 \u00b7 ink 17%"
     },
     {
       "x": 576,
       "y": 320,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 256,
+      "x1": 640,
+      "y1": 384,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.02 \u00b7 ink 19%"
     },
     {
       "x": 512,
       "y": 384,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 320,
+      "x1": 576,
+      "y1": 448,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.71 \u00b7 ink 19%"
     },
     {
       "x": 576,
       "y": 384,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 320,
+      "x1": 640,
+      "y1": 448,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.23 \u00b7 ink 21%"
     },
     {
       "x": 512,
       "y": 448,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 384,
+      "x1": 576,
+      "y1": 512,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.67 \u00b7 ink 19%"
     },
     {
       "x": 576,
       "y": 448,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 384,
+      "x1": 640,
+      "y1": 512,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.39 \u00b7 ink 18%"
     },
     {
       "x": 512,
       "y": 512,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 448,
+      "x1": 576,
+      "y1": 576,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.66 \u00b7 ink 17%"
     },
     {
       "x": 576,
       "y": 512,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 448,
+      "x1": 640,
+      "y1": 576,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.34 \u00b7 ink 17%"
     },
     {
       "x": 512,
       "y": 576,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 512,
+      "x1": 576,
+      "y1": 640,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.65 \u00b7 ink 19%"
     },
     {
       "x": 576,
       "y": 576,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 512,
+      "x1": 640,
+      "y1": 640,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.40 \u00b7 ink 18%"
     },
     {
       "x": 512,
       "y": 640,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 576,
+      "x1": 576,
+      "y1": 704,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.49 \u00b7 ink 28%"
     },
     {
       "x": 576,
       "y": 640,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 576,
+      "x1": 640,
+      "y1": 704,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.36 \u00b7 ink 20%"
     },
     {
       "x": 512,
       "y": 704,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 640,
+      "x1": 576,
+      "y1": 768,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.39 \u00b7 ink 36%"
     },
     {
       "x": 576,
       "y": 704,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 640,
+      "x1": 640,
+      "y1": 768,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.19 \u00b7 ink 23%"
     },
     {
       "x": 512,
       "y": 768,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 704,
+      "x1": 576,
+      "y1": 832,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.38 \u00b7 ink 36%"
     },
     {
       "x": 576,
       "y": 768,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 704,
+      "x1": 640,
+      "y1": 832,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.34 \u00b7 ink 19%"
     },
     {
       "x": 512,
       "y": 832,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 768,
+      "x1": 576,
+      "y1": 896,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.49 \u00b7 ink 26%"
     },
     {
       "x": 576,
       "y": 832,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 768,
+      "x1": 640,
+      "y1": 896,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.24 \u00b7 ink 20%"
     },
     {
       "x": 512,
       "y": 896,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 832,
+      "x1": 576,
+      "y1": 960,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.69 \u00b7 ink 18%"
     },
     {
       "x": 576,
       "y": 896,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 832,
+      "x1": 640,
+      "y1": 960,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.29 \u00b7 ink 17%"
     },
     {
       "x": 512,
       "y": 960,
-      "mode": "seam"
+      "x0": 448,
+      "y0": 896,
+      "x1": 576,
+      "y1": 1024,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 0.71 \u00b7 ink 18%"
     },
     {
       "x": 576,
       "y": 960,
-      "mode": "seam"
+      "x0": 512,
+      "y0": 896,
+      "x1": 640,
+      "y1": 1024,
+      "mode": "seam",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 40px \u00b7 rowness 1.44 \u00b7 ink 15%"
     }
   ]
 }

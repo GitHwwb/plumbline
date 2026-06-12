@@ -17,7 +17,7 @@ def test_load_zarr01_2d_float_passthrough(tmp_path):
     _write_array(tmp_path / "pred.zarr", data)
     out = load_zarr01(tmp_path / "pred.zarr")
     assert out.shape == (16, 20)
-    assert out.dtype == np.float64
+    assert out.dtype == np.float32   # half the memory of float64 on huge segments
     assert np.allclose(out, data, atol=1e-6)   # already in [0,1] -> passthrough
 
 
@@ -85,6 +85,70 @@ def test_load_zarr01_group_without_multiscales_needs_component(tmp_path):
     with pytest.raises(ValueError):
         load_zarr01(tmp_path / "bare.zarr")
     assert load_zarr01(tmp_path / "bare.zarr", component="data").shape == (4, 4)
+
+
+# --- Chunked reading: never materialize more than needed ---------------------
+class _RecordingArray:
+    """Minimal zarr-array stand-in that records every __getitem__ request, so
+    tests can assert the loader streams chunk-sized slabs instead of loading
+    the whole store (the point of Zarr)."""
+    def __init__(self, data, chunks):
+        self._d = np.asarray(data)
+        self.shape = self._d.shape
+        self.dtype = self._d.dtype
+        self.chunks = chunks
+        self.requests = []
+
+    def __getitem__(self, key):
+        self.requests.append(key)
+        return self._d[key]
+
+
+def _z_extent(key, depth):
+    """How many planes of the first axis one request touches."""
+    k = key[0] if isinstance(key, tuple) else key
+    if isinstance(k, slice):
+        return len(range(*k.indices(depth)))
+    return 1
+
+
+def test_read_zarr01_z_slice_reads_one_plane_not_the_volume():
+    from plumbline.io import _read_zarr01
+    rng = np.random.default_rng(0)
+    vol = rng.random((40, 8, 8), dtype=np.float32)
+    a = _RecordingArray(vol, chunks=(5, 8, 8))
+    out = _read_zarr01(a, z=7)
+    assert np.allclose(out, vol[7], atol=1e-6)
+    assert max(_z_extent(k, 40) for k in a.requests) == 1   # never the whole volume
+
+
+def test_read_zarr01_reduce_streams_chunk_slabs():
+    from plumbline.io import _read_zarr01
+    rng = np.random.default_rng(1)
+    vol = rng.random((40, 8, 8), dtype=np.float32)
+    for red, ref in (("max", vol.max(axis=0)), ("mean", vol.mean(axis=0))):
+        a = _RecordingArray(vol, chunks=(5, 8, 8))
+        out = _read_zarr01(a, reduce=red)
+        assert np.allclose(out, ref, atol=1e-6), red
+        assert max(_z_extent(k, 40) for k in a.requests) <= 5, red
+
+
+def test_read_zarr01_2d_streams_row_slabs():
+    from plumbline.io import _read_zarr01
+    data = ((np.arange(64 * 8).reshape(64, 8) % 251) * 257).astype("uint16")
+    a = _RecordingArray(data, chunks=(8, 8))
+    out = _read_zarr01(a, slab_rows=8)
+    assert out.dtype == np.float32
+    assert np.allclose(out, data / 65535.0, atol=1e-6)
+    assert max(_z_extent(k, 64) for k in a.requests) <= 8
+
+
+def test_read_zarr01_2d_float_above_one_normalized_by_max():
+    from plumbline.io import _read_zarr01
+    data = np.array([[0.0, 2.0], [4.0, 1.0]], dtype="float32")
+    a = _RecordingArray(data, chunks=(1, 2))
+    out = _read_zarr01(a, slab_rows=1)
+    assert np.allclose(out, data / 4.0, atol=1e-6)
 
 
 # --- Task 6: CLI routes run through load_input01 ----------------------------

@@ -41,6 +41,23 @@ def test_render_index_marks_error_rows():
     assert html.index("realbad") < html.index("oops")
 
 
+def test_render_index_seam_segments_sort_first_with_badge():
+    # A sheet jump is TOPOLOGICAL damage: it flags only the few tiles straddling
+    # one column, so a seamed segment can score 95+ and would sort BELOW merely
+    # noisy segments in the worst-first order -- burying exactly the defect the
+    # tool exists to surface. Seam segments form their own top tier (worst-first
+    # within it) and carry a visible badge. The score itself stays area-based.
+    rows = [
+        IndexRow("noisy", 40, 5, 4, 6, 0.2, "noisy.html", None, None),
+        IndexRow("seamed", 95, 0, 0, 0, 0.05, "seamed.html", None, None, n_seam=2),
+        IndexRow("clean", 100, 0, 0, 0, 0.05, "clean.html", None, None),
+    ]
+    html = render_index(rows, {"scroll": "S"})
+    assert html.index("seamed.html") < html.index("noisy.html") < html.index("clean.html")
+    assert "seam-badge" in html                  # visible marker on the seam row
+    assert html.count("seam-badge") >= 1
+
+
 def test_render_index_escapes_html():
     # autoescape must be on for the .j2 template, or segment ids / meta render raw.
     rows = [IndexRow("<script>x</script>", 50, 0, 0, 0, 0.1, None, None, None)]

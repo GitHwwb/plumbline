@@ -21,6 +21,9 @@
   tr.clickable:hover { background:#13243a; }
   .thumb { width:48px; height:30px; object-fit:cover; border:1px solid #22354a; border-radius:3px; display:block; }
   .badge { color:#0a1521; padding:1px 7px; border-radius:3px; font-weight:700; }
+  .seam-badge { background:#c77dff; color:#0a1521; padding:1px 6px; border-radius:3px;
+                font-size:10px; font-weight:700; letter-spacing:.5px; margin-left:6px;
+                text-transform:uppercase; }
   .err { color:#ff8c8c; font-size:11px; }
   .muted { color:#5a7a98; }
 </style>
@@ -46,7 +49,7 @@
 {% for r in rows %}
 <tr data-id="{{ r.seg_id }}"{% if r.report_filename and not r.error %} class="clickable" data-href="{{ r.report_filename }}"{% endif %}>
   <td>{% if r.thumb_b64 %}<img class="thumb" src="data:image/png;base64,{{ r.thumb_b64 }}">{% endif %}</td>
-  <td>{{ r.seg_id }}{% if r.error %} <span class="err">not evaluated</span>{% endif %}</td>
+  <td>{{ r.seg_id }}{% if r.error %} <span class="err">not evaluated</span>{% endif %}{% if r.n_seam %} <span class="seam-badge" title="text rows step vertically at a column — the fingerprint of a sheet jump; the score barely moves, so seam segments sort to the top">seam</span>{% endif %}</td>
   <td data-v="{{ r.score }}"><span class="badge" style="background:{{ score_color(r.score) }}">{{ r.score }}</span></td>
   <td data-v="{{ r.n_orient }}" class="{{ '' if r.n_orient else 'muted' }}">{{ r.n_orient }}</td>
   <td data-v="{{ r.n_spacing }}" class="{{ '' if r.n_spacing else 'muted' }}">{{ r.n_spacing }}</td>

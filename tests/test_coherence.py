@@ -5,13 +5,90 @@ from plumbline.util import to01, wrap_angle
 def test_to01_normalizes_uint8():
     a = np.array([[0, 255], [128, 255]], dtype=np.uint8)
     out = to01(a)
-    assert out.dtype == np.float64
+    # float32: full precision for [0,1] intensities at HALF the memory of
+    # float64 -- a 237 MP segment is ~0.9 GB instead of ~1.9 GB.
+    assert out.dtype == np.float32
     assert out.min() == 0.0 and out.max() == 1.0
 
 
 def test_to01_collapses_rgb():
     rgb = np.zeros((4, 4, 3), dtype=np.uint8)
     assert to01(rgb).shape == (4, 4)
+
+
+def test_band_contrast_robust_to_photo_background_glow():
+    # A PHOTOGRAPH (e.g. the frag1 infrared) has the papyrus itself glowing
+    # mid-gray, contributing most of the tile mean; std/mean then reads CLEAR
+    # letter rows as structureless (measured on frag1: rows detected at pitch
+    # 199px, yet band 0.071 < 0.10 -> garble flags on legible Greek). Rowness
+    # must judge the ink ABOVE the background glow, not the glow itself.
+    from plumbline.synthetic import glyph_rows
+    from plumbline.coherence import band_contrast
+    rng = np.random.default_rng(0)
+    text = glyph_rows((512, 512), row_pitch=40, seed=2)
+    glow_text = np.clip(0.40 + 0.15 * text + rng.normal(0, 0.02, text.shape), 0, 1)
+    assert band_contrast(glow_text) >= 0.10, \
+        "legible rows over a photo glow must not read as garble"
+
+
+def test_band_contrast_glow_does_not_unmask_noise():
+    # The background subtraction must NOT rescue structureless mottle: dense
+    # noise over the same glow stays below the garble line (both the garble
+    # detector and the 'may not be an ink prediction' warning depend on this).
+    from plumbline.coherence import band_contrast
+    rng = np.random.default_rng(1)
+    glow_noise = np.clip(0.40 + 0.45 * rng.random((512, 512)), 0, 1)
+    assert band_contrast(glow_noise) < 0.10
+
+
+def test_ink_density_counts_ink_above_parchment_not_parchment():
+    # On a PHOTOGRAPH the parchment glow itself clears the fixed 0.25 cut, so
+    # the tooltip read 'ink 76%' on a frag1 tile that is mostly bare parchment
+    # -- the number meant '76% of the tile is not void'. Density must count
+    # the layer ABOVE the background: letters a notch brighter than parchment.
+    from plumbline.synthetic import glyph_rows
+    from plumbline.coherence import ink_density
+    rng = np.random.default_rng(0)
+    text = glyph_rows((512, 512), row_pitch=40, seed=2)
+    true_ink = ink_density(text)                      # ground truth on the prediction
+    photo = np.clip(0.40 + 0.25 * text + rng.normal(0, 0.02, text.shape), 0, 1)
+    d = ink_density(photo)
+    assert abs(d - true_ink) < 0.10, f"photo ink {d:.2f} should track true ink {true_ink:.2f}"
+    assert d < 0.5, "parchment glow must not be counted as ink"
+
+
+def test_ink_density_featureless_parchment_reads_near_zero():
+    # Bare parchment with no letters: there is no brighter layer, so density
+    # must be LOW (such tiles should fall toward low-confidence, the honest
+    # 'too little ink to judge' outcome) -- not ~100% because gray > 0.25.
+    from plumbline.coherence import ink_density
+    rng = np.random.default_rng(1)
+    parchment = np.clip(0.40 + rng.normal(0, 0.02, (512, 512)), 0, 1)
+    assert ink_density(parchment) < 0.10
+
+
+def test_ink_density_prediction_path_is_byte_identical():
+    # Predictions (near-black background) keep the EXACT fixed-threshold
+    # behaviour: the 0.02 confidence gate and the display-dimming curve
+    # (D_LO/D_HI) were calibrated on it.
+    from plumbline.synthetic import glyph_rows
+    from plumbline.coherence import ink_density
+    text = glyph_rows((512, 512), row_pitch=40, seed=2)
+    assert ink_density(text) == float((text > 0.25).mean())
+
+
+def test_band_contrast_prediction_path_is_byte_identical():
+    # Ink predictions (background ~ 0) must take the EXACT old code path:
+    # every calibrated threshold (garble 0.10, the seam detector's row_gate,
+    # the coherence display curve) was tuned on this definition -- including
+    # the profile= fast path the seam scan relies on.
+    from plumbline.synthetic import glyph_rows
+    from plumbline.coherence import band_contrast, projection_profile, _linear_detrend
+    text = glyph_rows((512, 512), row_pitch=40, seed=2)
+    p = projection_profile(text, 0.0)
+    old = float(_linear_detrend(p).std() / max(float(p.mean()), 0.08))
+    assert abs(band_contrast(text) - old) < 1e-12
+    assert abs(band_contrast(text, 0.0, profile=p) - old) < 1e-12
 
 
 def test_to01_normalizes_uint16():

@@ -1,71 +1,52 @@
 {
-  "segment_id": "scroll5_prediction (real ink-model prediction)",
-  "score": 83,
+  "segment_id": "scroll5_prediction",
+  "score": 99,
   "n_orient": 1,
   "n_spacing": 2,
-  "n_garble": 72,
+  "n_garble": 0,
   "n_seam": 0,
   "low_conf_frac": 0.0,
+  "params": {
+    "plumbline_version": "0.1.0",
+    "tile_px": 331,
+    "grid": [
+      8,
+      62
+    ],
+    "gtheta_rad": 0.0,
+    "gpitch_px": 124.0,
+    "overlap": 0.5
+  },
   "regions": [
     {
       "x": 1161,
       "y": 829,
-      "mode": "orientation"
+      "x0": 996,
+      "y0": 664,
+      "x1": 1327,
+      "y1": 995,
+      "mode": "orientation",
+      "detail": "angle -21\u00b0 \u00b7 row pitch 106px \u00b7 rowness 0.67 \u00b7 ink 23%"
     },
     {
       "x": 829,
       "y": 331,
-      "mode": "spacing"
+      "x0": 664,
+      "y0": 166,
+      "x1": 995,
+      "y1": 497,
+      "mode": "spacing",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 160px \u00b7 rowness 0.31 \u00b7 ink 18%"
     },
     {
       "x": 331,
       "y": 995,
-      "mode": "spacing"
-    },
-    {
-      "x": 165,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 331,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 497,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 663,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 829,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 995,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 2323,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 5145,
-      "y": 331,
-      "mode": "garble"
-    },
-    {
-      "x": 5311,
-      "y": 331,
-      "mode": "garble"
+      "x0": 166,
+      "y0": 830,
+      "x1": 497,
+      "y1": 1161,
+      "mode": "spacing",
+      "detail": "angle 0\u00b0 \u00b7 row pitch 159px \u00b7 rowness 0.18 \u00b7 ink 29%"
     }
   ]
 }
