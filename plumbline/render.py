@@ -150,6 +150,15 @@ def heatmap_png(features, ink01=None) -> bytes:
     return _fig_to_png(fig)
 
 
+def _row_direction(theta):
+    """Display-coordinate (x, y-down) unit direction of text rows for codebase
+    theta: (cos t, -SIN t). The minus sign is the convention pinned by the
+    rotated seam-geometry test -- with +sin the drawn arrows are mirrored
+    about the horizontal (error = 2*theta: invisible on upright text, a
+    glaring NNE-vs-NNW flip on a -74deg segment, user-caught)."""
+    return float(np.cos(theta)), float(-np.sin(theta))
+
+
 def orientation_png(features, ink01=None) -> bytes:
     """Per-confident-tile dominant text-row direction (quiver). Arrows sit at true
     tile-CENTER pixel positions in the SAME pixel extent as the heatmap, so an
@@ -173,7 +182,8 @@ def orientation_png(features, ink01=None) -> bytes:
             continue
         th = features.theta[t.row, t.col]
         xs.append((t.x0 + t.x1) / 2.0); ys.append((t.y0 + t.y1) / 2.0)
-        us.append(np.cos(th) * L); vs.append(np.sin(th) * L)  # pixel y points down
+        ux, vy = _row_direction(th)                # (cos t, -sin t): see helper
+        us.append(ux * L); vs.append(vy * L)
     if xs:
         ax.quiver(xs, ys, us, vs, pivot="mid", angles="xy",
                   scale_units="xy", scale=1.0,

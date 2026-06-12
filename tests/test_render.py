@@ -69,6 +69,21 @@ def test_flagged_regions_include_tile_extents():
         assert r["x1"] - r["x0"] > 0 and r["y1"] - r["y0"] > 0
 
 
+def test_quiver_row_direction_matches_display_convention():
+    # User-caught on the -74deg segment: quiver arrows pointed NNE while the
+    # actual text lines run NNW. The display-coordinate row direction for
+    # codebase theta is (cos t, -SIN t) -- pinned analytically by the rotated
+    # seam-geometry test -- but the quiver drew (cos t, +sin t), a mirror
+    # about the horizontal (error = 2*theta: invisible upright, glaring when
+    # rotated). The orientation view must use the same convention as the
+    # seam mapping.
+    from plumbline.render import _row_direction
+    th = np.radians(-74.0)
+    ux, vy = _row_direction(th)
+    assert ux > 0 and vy > 0, "for theta=-74deg the on-screen line is NNW/SSE: +x, +y(down)"
+    assert np.isclose(ux, np.cos(th)) and np.isclose(vy, -np.sin(th))
+
+
 def test_display_downsample_keeps_thin_strokes():
     # Stride downsampling (a[::k, ::k]) keeps every k-th row, so a 1-px stroke
     # survives only if its row index happens to be a multiple of k -- strokes
