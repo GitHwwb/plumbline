@@ -231,18 +231,19 @@ def input_warning(features, flags) -> Optional[str]:
     """Heuristic warnings when an input is outside the tool's regime.
 
     1. ROTATION OUT OF RANGE (checked first -- more specific and actionable):
-       the GLOBAL skew search (estimate_scale_and_skew) sweeps only +-25deg,
-       so text rotated beyond that pegs gtheta at EXACTLY the boundary --
-       measured: 60deg-rotated glyph text -> gtheta = -25.0deg railed, while
-       10deg text -> 10.0deg, upright -> 0.0deg, noise -> 0.0deg, all interior.
-       (Per-tile sweeps do NOT rail in this regime -- they re-seed from the
-       railed gtheta and find spurious interior maxima -- so the global rail
-       is the only reliable fingerprint.) The structured-fraction conjunct
-       keeps an unlucky flat-objective boundary argmax on noise from
-       misdiagnosing as rotation. This matters because every downstream
-       detector then measures across the wrong axis -- a real ~60deg-rotated
-       GP-banner label set collected 50 bogus 'seam' flags from the
-       vertical-strip scan (user-reported). Confess, don't emit confident flags.
+       analyze_tiles runs a FULL-RANGE (+-89deg) orientation reconnaissance
+       because the +-25deg skew estimate finds a spurious INTERIOR angle on
+       heavily rotated sparse text (measured on the real rotated GP labels:
+       7.5deg for text lying at ~-74deg -- so a boundary-rail fingerprint,
+       the first design, missed it entirely). The recon winner counts only
+       when ROW PERIODICITY exists at that angle: real rotated text lines
+       repeat there (pitch strength 0.69-0.95 measured), while an upright
+       fragment whose full sweep is fooled by its own outline shows none
+       (frag1: 84deg 'winner', strength 0.00 -- a naive angle check would
+       false-alarm on it). This matters because every downstream detector
+       measures across the wrong axis on rotated input -- the real segment
+       collected 50 bogus 'seam' flags from the vertical-strip scan
+       (user-reported). Confess, don't emit confident flags.
     2. DENSE-BUT-STRUCTURELESS: most analyzable tiles are dense but have no
        text-line structure -- the signature of a bare surface render or a
        label mask, not detected ink.
@@ -251,15 +252,15 @@ def input_warning(features, flags) -> Optional[str]:
     n_conf = int(features.confidence.sum())
     if n_conf == 0:
         return None
-    gtheta = float(getattr(features, "gtheta", 0.0))
-    span = np.radians(25.0)                      # mirrors estimate_scale_and_skew's sweep
-    structured_frac = float((features.confidence
-                             & (features.band_strength >= 0.10)).sum()) / n_conf
-    if abs(gtheta) >= span - 1e-6 and structured_frac >= 0.5:
-        return ("text orientation appears to lie OUTSIDE the supported ±25° skew "
-                "range (the global skew search pegged its boundary). "
+    th_full = getattr(features, "gtheta_full", None)
+    full_pstr = float(getattr(features, "gtheta_full_pstr", 0.0))
+    if (th_full is not None and abs(float(th_full)) >= np.radians(30.0)
+            and full_pstr >= 0.30):
+        return ("text appears ROTATED ~{:.0f}° -- outside the supported ±25° skew "
+                "range (periodic text lines detected at that angle). "
                 "Orientation/spacing/seam flags are unreliable on rotated "
-                "input -- rotate the image upright and re-run.")
+                "input -- rotate the image upright and re-run."
+                .format(np.degrees(float(th_full))))
     garble_frac = int(flags.garble.sum()) / n_conf
     if garble_frac >= 0.5:
         return ("input may not be an ink prediction: most analyzable tiles have "

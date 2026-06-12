@@ -34,3 +34,9 @@ def test_real_ir_text_scores_and_is_not_blanketed():
     # horizontal text should yield a consistent orientation field, not a spray of
     # orient_break flags from the skew search saturating at its search boundary.
     assert orient_frac < 0.15, f"orient_break blankets {orient_frac:.0%} of confident tiles"
+    # ...and the ROTATION warning must stay quiet: this fragment's full-range
+    # orientation sweep is fooled by its own outline (an 84deg 'winner' with NO
+    # row periodicity there) -- upright real text must not be told to rotate.
+    from plumbline.score import input_warning
+    w = input_warning(feats, flags)
+    assert w is None or "rotat" not in w.lower(), f"false rotation warning: {w}"

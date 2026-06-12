@@ -29,6 +29,13 @@ class TileFeatures:
     #   fragments / rail-pegged fits with no real writing direction; gates
     #   orientation-break flagging so a noisy angle can't manufacture a flag.
     gtheta: float = 0.0           # global skew angle (radians) used for the seam scan
+    gtheta_full: Optional[float] = None  # FULL-RANGE (+-89deg) reconnaissance angle:
+    #   where the writing direction lies when allowed to be ANY angle. The +-25deg
+    #   estimate finds a spurious interior angle on heavily rotated sparse text, so
+    #   input_warning needs this to detect out-of-regime rotation.
+    gtheta_full_pstr: float = 0.0 # row-pitch strength at gtheta_full: real rotated
+    #   text lines REPEAT at their true angle (0.69-0.95 measured); an upright
+    #   fragment whose full sweep is fooled by its own outline shows ~0 (frag1).
     gpitch: float = float("nan")  # per-tile MEDIAN row pitch (px): the seam detector's
     #   reference spacing. The per-tile median (not a fresh global single-profile pitch)
     #   is load-bearing -- a sheet-jump corrupts the global profile's autocorrelation

@@ -31,3 +31,4 @@ demo_out/
 # Synthetic showcase reports (bundled in the handoff zip as example output, not git-tracked)
 demo_showcase/
 demo_synthetic/
+demo_pack/

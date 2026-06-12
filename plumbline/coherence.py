@@ -305,6 +305,24 @@ def analyze_tiles(ink, mask=None, tile=None, overlap=0.5,
     auto_tile, gtheta = estimate_scale_and_skew(a, mask)
     if tile is None:
         tile = auto_tile
+    # ROTATION RECONNAISSANCE (consumed by score.input_warning): the +-25deg
+    # estimate above finds a spurious INTERIOR angle on heavily rotated sparse
+    # text (measured on the real rotated GP labels: it read 7.5deg for text
+    # lying at ~-74deg), so ALSO sweep the FULL range on a downsampled copy
+    # and measure ROW PERIODICITY at the winner. Real rotated text lines
+    # repeat at their true angle (pitch strength 0.69-0.95 measured); an
+    # upright fragment whose full-range sweep is fooled by its own outline
+    # shows none (frag1: 84deg 'winner', strength 0.00). ~37 rotations of a
+    # <=1000px copy: negligible next to the per-tile loop below.
+    rcrop = a
+    if mask.shape == a.shape and mask.any() and not mask.all():
+        ys, xs = np.where(mask)
+        rcrop = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
+    rscale = min(1.0, 1000.0 / max(rcrop.shape))
+    rsmall = _zoom(rcrop, rscale, order=1) if rscale < 1.0 else rcrop
+    gtheta_full = dominant_orientation(rsmall, seed=0.0, span=np.radians(89), n=37)
+    _, gfull_pstr = row_pitch(rsmall, gtheta_full, min_lag=4,
+                              max_lag=max(5, min(rsmall.shape) // 2))
     tiles, nr, nc = tile_grid(a.shape, tile, overlap)
     theta = np.zeros((nr, nc)); band = np.zeros((nr, nc))
     pitch = np.full((nr, nc), np.nan); pstr = np.zeros((nr, nc))
@@ -347,4 +365,6 @@ def analyze_tiles(ink, mask=None, tile=None, overlap=0.5,
     gpitch = (float(np.nanmedian(conf_pitch)) if np.isfinite(conf_pitch).any()
               else float("nan"))
     return TileFeatures(nr, nc, theta, band, pitch, pstr, density, conf, tiles,
-                        rel, gtheta=float(gtheta), gpitch=gpitch)
+                        rel, gtheta=float(gtheta), gpitch=gpitch,
+                        gtheta_full=float(gtheta_full),
+                        gtheta_full_pstr=float(gfull_pstr))

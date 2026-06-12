@@ -211,6 +211,22 @@ def test_input_warning_quiet_on_modest_skew():
     assert w is None or "rotat" not in w.lower()
 
 
+def test_input_warning_fires_on_rotation_with_spurious_interior_skew():
+    # THE REAL-WORLD FAILURE (the rotated GP-banner label set): on sparse
+    # rotated text the +-25deg skew search does NOT rail -- it finds a
+    # spurious INTERIOR angle (the real segment read 7.5deg; this fixture
+    # reads -15deg), so a boundary-rail fingerprint misses it entirely. The
+    # reconnaissance must sweep the FULL range: the true angle (75deg) wins
+    # there WITH strong row periodicity (pitch strength ~0.87) -- while an
+    # upright fragment whose full-range sweep is fooled by its own outline
+    # (frag1: 84deg 'winner') shows NO periodicity at that angle (0.00).
+    f = glyph_rows((1024, 1024), row_pitch=60, glyph=24, gap=12, fill=0.5,
+                   angle=np.radians(75), seed=5)
+    feats = analyze_tiles(f)
+    w = input_warning(feats, flag_tiles(feats))
+    assert w is not None and "rotat" in w.lower()
+
+
 def test_spacing_consensus_gate_keeps_real_jump_drops_scatter():
     from plumbline.model import TileFeatures, Tile
     rng = np.random.default_rng(0)
