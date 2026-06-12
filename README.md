@@ -117,7 +117,7 @@ evaluate is marked "not evaluated" and never aborts the run.
 |------|---------------|
 | **Ink + flags** | the ink prediction with flagged tiles outlined in red |
 | **Coherence** | per-tile "how row-like is the ink" heatmap (projection-profile band contrast), low-confidence tiles blanked; near-empty single-sliver tiles are dimmed so they don't read brighter than real text; an **overlay ink** toggle shows the text underneath. A rough visual aid — orientation, flags, and seams are the actionable signals |
-| **Orientation** | per-tile dominant text-row direction (quiver field) |
+| **Orientation** | per-tile dominant text-row axis (headless ticks — orientation is measured mod 180°, so reading direction is unknowable) |
 | **Flags** | flagged tiles colored by failure mode (orientation / spacing / garble / **seam**) |
 
 ## How the score works

@@ -160,10 +160,13 @@ def _row_direction(theta):
 
 
 def orientation_png(features, ink01=None) -> bytes:
-    """Per-confident-tile dominant text-row direction (quiver). Arrows sit at true
-    tile-CENTER pixel positions in the SAME pixel extent as the heatmap, so an
-    optional ink underlay (ink01) lines the arrows up against the text they describe
-    -- pass ink01 to draw that faint gray underlay, omit it for the plain field."""
+    """Per-confident-tile dominant text-row AXIS, drawn as HEADLESS ticks.
+    Orientation is measured mod 180deg (row profiles are identical read with
+    or against the text), so arrowheads would claim a reading direction the
+    analyzer cannot know -- and near the +-90deg wrap they flipped tile to
+    tile (user-caught on a rotated segment). Ticks sit at true tile-CENTER
+    pixel positions in the SAME pixel extent as the heatmap, so an optional
+    ink underlay (ink01) lines them up against the text they describe."""
     fig, ax = plt.subplots(figsize=(6, 6))
     w = max((t.x1 for t in features.tiles), default=features.n_cols)
     h = max((t.y1 for t in features.tiles), default=features.n_rows)
@@ -173,21 +176,23 @@ def orientation_png(features, ink01=None) -> bytes:
         a = np.clip(_downsample_mean(a, k), 0.0, 1.0)
         ax.imshow(a, cmap="gray", extent=[0, w, h, 0], aspect="equal",
                   interpolation="nearest")
-    # arrow length ~0.4 tile so arrows read as row-direction ticks, not a dense field
+    # tick length ~0.4 tile so the field reads as row-axis ticks, not clutter
     tile_w = np.median([t.x1 - t.x0 for t in features.tiles]) if features.tiles else 1.0
     L = 0.4 * float(tile_w)
-    xs, ys, us, vs = [], [], [], []
+    segs = []
     for t in features.tiles:
         if not features.confidence[t.row, t.col]:
             continue
         th = features.theta[t.row, t.col]
-        xs.append((t.x0 + t.x1) / 2.0); ys.append((t.y0 + t.y1) / 2.0)
+        mx, my = (t.x0 + t.x1) / 2.0, (t.y0 + t.y1) / 2.0
         ux, vy = _row_direction(th)                # (cos t, -sin t): see helper
-        us.append(ux * L); vs.append(vy * L)
-    if xs:
-        ax.quiver(xs, ys, us, vs, pivot="mid", angles="xy",
-                  scale_units="xy", scale=1.0,
-                  color=("#ffce5c" if ink01 is not None else "black"), width=0.004)
+        segs.append([(mx - ux * L / 2, my - vy * L / 2),
+                     (mx + ux * L / 2, my + vy * L / 2)])
+    if segs:
+        from matplotlib.collections import LineCollection
+        ax.add_collection(LineCollection(
+            segs, colors=("#ffce5c" if ink01 is not None else "black"),
+            linewidths=1.8, capstyle="round"))
     ax.set_xlim(0, w); ax.set_ylim(h, 0)               # pixel extent, y down (no invert)
     ax.set_aspect("equal"); ax.set_axis_off()
     return _fig_to_png(fig)

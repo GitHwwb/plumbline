@@ -93,7 +93,7 @@
 const CAPS = {
   ink: "Ink prediction with every flagged tile outlined (color = failure mode). <b>Hover a box for that tile's measurements</b>; click a row in the Flagged-regions table to jump to its box. More flags means a lower score.",
   heat: "<b>Row coherence</b> per confident tile: bright = ink forms clear text rows. Near-empty / very sparse tiles are <b>dimmed</b> (not blacked out) so a lone ink sliver doesn't read brighter than real text — a dim tile can mean weak structure <i>or</i> just little ink, so cross-check the Flags view. Background (too little ink to assess) is left blank. Tick <b>overlay ink image</b> to read it against the text. Banded papyrus fibers can mimic rows, so high coherence is <b>not</b> proof of ink.",
-  orient: "Dominant text-row direction per confident tile (arrows lie along the rows). Tick <b>overlay ink image</b> to see the arrows against the text they describe. A local break here is flagged as an orientation break.",
+  orient: "Dominant text-row axis per confident tile (ticks lie along the rows; orientation is measured mod 180° — the analyzer cannot know the reading direction, so no arrowheads). Tick <b>overlay ink image</b> to see them against the text they describe. A local break here is flagged as an orientation break.",
   flags: "Flagged tiles by failure mode — <span class='sw' style='background:#ff5c5c'></span>orientation · <span class='sw' style='background:#ffce5c'></span>spacing · <span class='sw' style='background:#7fb0e0'></span>garble · <span class='sw' style='background:#c77dff'></span>seam (rows step at a sheet jump). Tiles span the analysis grid (not individual letters)."
 };
 const OVERLAYABLE = {heat:1, orient:1};   // tabs that support the ink overlay toggle
