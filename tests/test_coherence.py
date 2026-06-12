@@ -16,6 +16,25 @@ def test_to01_collapses_rgb():
     assert to01(rgb).shape == (4, 4)
 
 
+def test_analyze_tiles_adopts_decisive_rotated_text_direction():
+    # When the full-range reconnaissance finds the writing direction beyond
+    # the +-25deg sweep WITH real row periodicity there, analyze_tiles adopts
+    # it as gtheta -- per-tile sweeps then seed at the true angle and every
+    # downstream detector works in the text's frame (user direction: rotate
+    # the analyzer, not the image). In-regime inputs keep the old estimate
+    # byte-identically.
+    from plumbline.synthetic import glyph_rows
+    from plumbline.coherence import analyze_tiles
+    f = glyph_rows((1024, 1024), row_pitch=60, glyph=24, gap=12, fill=0.5,
+                   angle=np.radians(75), seed=5)
+    feats = analyze_tiles(f)
+    assert abs(abs(np.degrees(feats.gtheta)) - 75) < 8, \
+        f"gtheta {np.degrees(feats.gtheta):.1f} should adopt ~±75°"
+    # upright text: gtheta stays the in-regime estimate (near 0)
+    up = glyph_rows((512, 512), row_pitch=40, seed=2)
+    assert abs(np.degrees(analyze_tiles(up).gtheta)) < 5
+
+
 def test_band_contrast_robust_to_photo_background_glow():
     # A PHOTOGRAPH (e.g. the frag1 infrared) has the papyrus itself glowing
     # mid-gray, contributing most of the tile mean; std/mean then reads CLEAR

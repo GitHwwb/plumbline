@@ -209,9 +209,16 @@ def seam_offset_profile(ink, theta, pitch, strip_px=None):
     return np.asarray(cx, dtype=float), mres, np.asarray(rown), corr, zero_corr
 
 
-def estimate_scale_and_skew(ink, mask=None, k_rows=4.0, target=1000.0):
+def estimate_scale_and_skew(ink, mask=None, k_rows=4.0, target=1000.0,
+                            theta_override=None):
     """Pick a tile size spanning several text rows + the global skew angle.
-    Returns (tile_size:int, theta:float). Scale comes from the dominant ROW PITCH
+    Returns (tile_size:int, theta:float). `theta_override` (radians) skips the
+    +-25deg sweep and uses the given writing direction instead -- analyze_tiles
+    passes the full-range reconnaissance angle here when it is decisive, so
+    ROTATED text gets its tile size from the pitch measured along its TRUE
+    rows (the +-25deg sweep finds a spurious angle on such input, and a tile
+    sized from a spurious angle's pitch is garbage). Scale comes from the
+    dominant ROW PITCH
     (line spacing) of the global profile -- not the autocorrelation decay length,
     which inflates on sparse text and ballooned the tile (see the design spec:
     docs/superpowers/specs/2026-06-03-plumbline-coherence-view-tiling-spacing-design.md).
@@ -223,7 +230,8 @@ def estimate_scale_and_skew(ink, mask=None, k_rows=4.0, target=1000.0):
         a = a[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     scale = min(1.0, target / max(a.shape))
     small = _zoom(a, scale, order=1) if scale < 1.0 else a
-    theta = dominant_orientation(small, seed=0.0, span=np.radians(25), n=21)
+    theta = (float(theta_override) if theta_override is not None
+             else dominant_orientation(small, seed=0.0, span=np.radians(25), n=21))
     # Primary: the dominant row pitch (first prominent autocorrelation peak) is the
     # real line spacing; sparsity does not inflate it the way the decay length does.
     pitch_small, pstr = row_pitch(small, theta, min_lag=4,
@@ -301,19 +309,15 @@ def analyze_tiles(ink, mask=None, tile=None, overlap=0.5,
     a = to01(ink)
     if mask is None:
         mask = np.ones(a.shape, dtype=bool)
-    # always need gtheta to seed per-tile orientation; auto_tile only used when tile is None
-    auto_tile, gtheta = estimate_scale_and_skew(a, mask)
-    if tile is None:
-        tile = auto_tile
-    # ROTATION RECONNAISSANCE (consumed by score.input_warning): the +-25deg
-    # estimate above finds a spurious INTERIOR angle on heavily rotated sparse
-    # text (measured on the real rotated GP labels: it read 7.5deg for text
-    # lying at ~-74deg), so ALSO sweep the FULL range on a downsampled copy
-    # and measure ROW PERIODICITY at the winner. Real rotated text lines
-    # repeat at their true angle (pitch strength 0.69-0.95 measured); an
-    # upright fragment whose full-range sweep is fooled by its own outline
-    # shows none (frag1: 84deg 'winner', strength 0.00). ~37 rotations of a
-    # <=1000px copy: negligible next to the per-tile loop below.
+    # ROTATION RECONNAISSANCE first: the +-25deg estimate finds a spurious
+    # INTERIOR angle on heavily rotated sparse text (measured on the real
+    # rotated GP labels: it read 7.5deg for text lying at ~-74deg), so sweep
+    # the FULL range on a downsampled copy and measure ROW PERIODICITY at the
+    # winner. Real rotated text lines repeat at their true angle (pitch
+    # strength 0.69-0.95 measured); an upright fragment whose full-range
+    # sweep is fooled by its own outline shows none (frag1: 84deg 'winner',
+    # strength 0.00). ~37 rotations of a <=1000px copy: negligible next to
+    # the per-tile loop below.
     rcrop = a
     if mask.shape == a.shape and mask.any() and not mask.all():
         ys, xs = np.where(mask)
@@ -323,6 +327,17 @@ def analyze_tiles(ink, mask=None, tile=None, overlap=0.5,
     gtheta_full = dominant_orientation(rsmall, seed=0.0, span=np.radians(89), n=37)
     _, gfull_pstr = row_pitch(rsmall, gtheta_full, min_lag=4,
                               max_lag=max(5, min(rsmall.shape) // 2))
+    # ADOPT the text's own direction when the recon is decisive (beyond the
+    # +-25deg regime AND periodic rows exist there): per-tile sweeps then seed
+    # at the true angle, tile size comes from the pitch along the true rows,
+    # and the seam scan runs in the text's frame (flag_seam) -- the analyzer
+    # rotates to the text, the input is never resampled. In-regime input
+    # keeps the original +-25deg estimate byte-identically.
+    adopt = (abs(float(gtheta_full)) > np.radians(25.0) and gfull_pstr >= 0.30)
+    auto_tile, gtheta = estimate_scale_and_skew(
+        a, mask, theta_override=(float(gtheta_full) if adopt else None))
+    if tile is None:
+        tile = auto_tile
     tiles, nr, nc = tile_grid(a.shape, tile, overlap)
     theta = np.zeros((nr, nc)); band = np.zeros((nr, nc))
     pitch = np.full((nr, nc), np.nan); pstr = np.zeros((nr, nc))

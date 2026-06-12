@@ -305,6 +305,54 @@ def test_seam_fires_on_half_pitch_jump():
         assert flag_seam(feats, f, th, p).sum() >= 1, f"seam missed dy=pitch/2 (pitch={pitch})"
 
 
+def test_seam_detected_on_rotated_sheet_jump():
+    # ROTATED-TEXT SUPPORT (user direction: rotate the ANALYZER to the text,
+    # don't derotate the input): a sheet jump in text rotated ~40deg must be
+    # caught by the seam scan running in the TEXT's frame, and the flagged
+    # tiles must straddle the seam LINE in the original image frame.
+    from scipy.ndimage import rotate as _ndrotate
+    clean = glyph_rows((1024, 1024), row_pitch=40, seed=3)
+    spliced = splice_shift(clean, x_split=384, dy=20)          # seam at text-x 384
+    rot = np.clip(_ndrotate(spliced, 40, reshape=True, order=1,
+                            mode="constant", cval=0.0), 0, 1)
+    feats = analyze_tiles(rot)
+    assert abs(np.degrees(feats.gtheta)) > 30, "text direction must be ADOPTED"
+    flags = flag_tiles(feats, ink=rot)
+    n = int(flags.seam_break.sum())
+    assert n >= 1, "rotated sheet jump missed"
+    # the seam line in the image frame: rotation is rigid, so points on the
+    # seam keep a CONSTANT projection onto the row direction, equal to the
+    # splice's offset from center (384 - 512 = -128px, sign depending on the
+    # rotation's). NB the display-coords row direction for codebase theta is
+    # (cos t, -SIN t) -- with (cos t, +sin t) the projections of these very
+    # tiles spread over >1000px (lines are mod-pi; projections are not).
+    h, w = rot.shape
+    cy, cx = h / 2.0, w / 2.0
+    ux, uy = np.cos(feats.gtheta), -np.sin(feats.gtheta)
+    tile_px = feats.tiles[0].x1 - feats.tiles[0].x0
+    ds = [(((t.x0 + t.x1) / 2.0) - cx) * ux + (((t.y0 + t.y1) / 2.0) - cy) * uy
+          for t in feats.tiles if flags.seam_break[t.row, t.col]]
+    spread = max(ds) - min(ds)
+    med = float(np.median(ds))
+    # a line (not a scatter): spread bounded by the rotated tile bbox width
+    assert spread < 2.0 * tile_px, f"seam tiles scattered: spread {spread:.0f}px"
+    # ...sitting at the seam's true offset (sign per rotation direction)
+    assert min(abs(med - 128), abs(med + 128)) < 1.0 * tile_px, \
+        f"seam line at projection {med:.0f}px, expected ~±128px"
+
+
+def test_seam_quiet_on_rotated_clean_text():
+    # The rotated path must inherit the detector's dominant design goal: NO
+    # false seams on clean (merely rotated) text.
+    from scipy.ndimage import rotate as _ndrotate
+    clean = glyph_rows((1024, 1024), row_pitch=40, seed=3)
+    rot = np.clip(_ndrotate(clean, 40, reshape=True, order=1,
+                            mode="constant", cval=0.0), 0, 1)
+    feats = analyze_tiles(rot)
+    flags = flag_tiles(feats, ink=rot)
+    assert int(flags.seam_break.sum()) == 0, "false seam on clean rotated text"
+
+
 def test_seam_quiet_on_clean_glyph_rows():
     for seed in (0, 1, 2, 5, 7, 11):
         for pitch in (28, 40, 52, 64):

@@ -136,7 +136,15 @@ def flag_seam(features, ink=None, theta=None, pitch=None, seam_frac=0.30,
           a single seam -> suppress all; survivors must also be a local offset max.
     `ink` is the source image (needed for the strip scan); theta/pitch default to the
     per-image skew + per-tile-median pitch stashed on `features`. Returns an all-False
-    grid when ink is None (graceful no-op for callers that don't pass it)."""
+    grid when ink is None (graceful no-op for callers that don't pass it).
+
+    ROTATED TEXT (|theta| > 15deg, e.g. an adopted full-range direction): the
+    strip geometry assumes rows ~horizontal, so the UNCHANGED detector runs on
+    an internally derotated view instead -- its gates keep their calibration in
+    that frame -- and seam positions map back to original tiles through the
+    rigid rotation (forward map out = R^T(in - c_in) + c_out, verified against
+    scipy's convention with a delta-pixel probe). The input image itself is
+    never resampled for any other metric; the report stays in original pixels."""
     grid = np.zeros((features.n_rows, features.n_cols), dtype=bool)
     if ink is None:
         return grid
@@ -147,7 +155,30 @@ def flag_seam(features, ink=None, theta=None, pitch=None, seam_frac=0.30,
     if not np.isfinite(pitch):
         return grid
     from plumbline.coherence import seam_offset_profile
-    cx, m, rown, corr, zero_corr = seam_offset_profile(ink, theta, pitch)
+    if abs(float(theta)) > np.radians(15.0):    # text frame: derotate the SCAN only
+        from scipy.ndimage import rotate as _ndrotate
+        from plumbline.util import to01
+        a01 = to01(ink)
+        deg = -np.degrees(float(theta))
+        scan = _ndrotate(a01, deg, reshape=True, order=1, mode="constant", cval=0.0)
+        ang = np.radians(deg)
+        ca, sa = np.cos(ang), np.sin(ang)
+        ciy, cix = (a01.shape[0] - 1) / 2.0, (a01.shape[1] - 1) / 2.0
+        cox = (scan.shape[1] - 1) / 2.0
+
+        def _rx(y, x):                          # derotated-frame x of an original point
+            return sa * (y - ciy) + ca * (x - cix) + cox
+
+        intervals = [(min(_rx(t.y0, t.x0), _rx(t.y0, t.x1),
+                          _rx(t.y1, t.x0), _rx(t.y1, t.x1)),
+                      max(_rx(t.y0, t.x0), _rx(t.y0, t.x1),
+                          _rx(t.y1, t.x0), _rx(t.y1, t.x1)))
+                     for t in features.tiles]
+        scan_theta = 0.0
+    else:
+        scan, scan_theta = ink, theta
+        intervals = [(t.x0, t.x1) for t in features.tiles]
+    cx, m, rown, corr, zero_corr = seam_offset_profile(scan, scan_theta, pitch)
     if m.size < 3:
         return grid
     thr = seam_frac * pitch
@@ -160,8 +191,8 @@ def flag_seam(features, ink=None, theta=None, pitch=None, seam_frac=0.30,
         if m[i] < m[max(0, i - 1):i + 2].max() - 1e-9:
             continue
         seam_x = cx[i]
-        for t in features.tiles:
-            if t.x0 <= seam_x <= t.x1 and features.confidence[t.row, t.col]:
+        for t, (xa, xb) in zip(features.tiles, intervals):
+            if xa <= seam_x <= xb and features.confidence[t.row, t.col]:
                 grid[t.row, t.col] = True
     return grid
 
@@ -230,20 +261,18 @@ def trace_health(features, flags) -> ScoreReport:
 def input_warning(features, flags) -> Optional[str]:
     """Heuristic warnings when an input is outside the tool's regime.
 
-    1. ROTATION OUT OF RANGE (checked first -- more specific and actionable):
-       analyze_tiles runs a FULL-RANGE (+-89deg) orientation reconnaissance
-       because the +-25deg skew estimate finds a spurious INTERIOR angle on
-       heavily rotated sparse text (measured on the real rotated GP labels:
-       7.5deg for text lying at ~-74deg -- so a boundary-rail fingerprint,
-       the first design, missed it entirely). The recon winner counts only
-       when ROW PERIODICITY exists at that angle: real rotated text lines
-       repeat there (pitch strength 0.69-0.95 measured), while an upright
-       fragment whose full sweep is fooled by its own outline shows none
-       (frag1: 84deg 'winner', strength 0.00 -- a naive angle check would
-       false-alarm on it). This matters because every downstream detector
-       measures across the wrong axis on rotated input -- the real segment
-       collected 50 bogus 'seam' flags from the vertical-strip scan
-       (user-reported). Confess, don't emit confident flags.
+    1. ROTATED TEXT, ALIGNED (informational, checked first): analyze_tiles'
+       full-range reconnaissance adopts the text's own direction when it is
+       decisive (beyond +-25deg with real row periodicity there -- the
+       periodicity requirement is what keeps an upright fragment whose full
+       sweep is fooled by its own outline from false-alarming: frag1's 84deg
+       'winner' has pitch strength 0.00 vs 0.69-0.95 for genuinely rotated
+       text). When adopted, gtheta IS the rotated angle: per-tile metrics,
+       tile sizing and the seam scan all run in the text's frame, so the
+       message is a notice that alignment happened, not a reliability
+       disclaimer. (History: a +-25deg boundary-rail fingerprint was tried
+       first and missed the real rotated GP labels entirely -- their +-25deg
+       estimate read a spurious interior 7.5deg for text at ~-74deg.)
     2. DENSE-BUT-STRUCTURELESS: most analyzable tiles are dense but have no
        text-line structure -- the signature of a bare surface render or a
        label mask, not detected ink.
@@ -252,15 +281,13 @@ def input_warning(features, flags) -> Optional[str]:
     n_conf = int(features.confidence.sum())
     if n_conf == 0:
         return None
-    th_full = getattr(features, "gtheta_full", None)
-    full_pstr = float(getattr(features, "gtheta_full_pstr", 0.0))
-    if (th_full is not None and abs(float(th_full)) >= np.radians(30.0)
-            and full_pstr >= 0.30):
-        return ("text appears ROTATED ~{:.0f}° -- outside the supported ±25° skew "
-                "range (periodic text lines detected at that angle). "
-                "Orientation/spacing/seam flags are unreliable on rotated "
-                "input -- rotate the image upright and re-run."
-                .format(np.degrees(float(th_full))))
+    gtheta = float(getattr(features, "gtheta", 0.0))
+    if abs(gtheta) > np.radians(25.0) + 1e-6:    # only reachable via adoption
+        return ("text is rotated ~{:.0f}°: analysis was ALIGNED to the text "
+                "direction automatically -- per-tile metrics, tile sizing and "
+                "the seam scan all run in the text's frame. Rotated-input "
+                "support is newer than upright; eyeball the flags."
+                .format(np.degrees(gtheta)))
     garble_frac = int(flags.garble.sum()) / n_conf
     if garble_frac >= 0.5:
         return ("input may not be an ink prediction: most analyzable tiles have "

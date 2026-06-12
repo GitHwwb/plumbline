@@ -193,6 +193,14 @@ handful of real images; its clean-text false-positive margin is real but narrow,
 lone seam flag as "look here", not proof. Tile size auto-adapts to text scale; pass
 `--tile` to override.
 
+**Rotated segments:** a full-range orientation reconnaissance runs on every image. If the
+writing direction lies beyond the standard ±25° skew range *and* periodic text lines exist
+at that angle, the **analyzer aligns itself to the text**: per-tile metrics, tile sizing
+and the seam scan all run in the text's frame (the seam scan derotates an internal view
+only — the input is never resampled, and all flags stay in original pixel coordinates).
+A notice in the report and CLI states the detected angle. Rotated-input support is newer
+than upright; eyeball the flags.
+
 ## Validation
 
 Correctness is anchored by **synthetic text** — `glyph_rows` in
