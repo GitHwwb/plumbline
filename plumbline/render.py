@@ -85,13 +85,10 @@ def _coherence_display(band, density=None):
     return disp
 
 
-def _flag_extent(features, flags):
-    rects = []
-    fm = flags.any_flag
-    for t in features.tiles:
-        if fm[t.row, t.col]:
-            rects.append((t.x0, t.y0, t.x1 - t.x0, t.y1 - t.y0))
-    return rects
+# True-neon signal palette: single source for every matplotlib render, kept in
+# lockstep with the report/dashboard chrome (theme-lock test pins the tokens).
+_FLAG_COLORS = {"orientation": "#e23227", "spacing": "#fcf151",
+                "garble": "#5acbfa", "seam": "#a855f7"}
 
 
 def ink_png(ink01, max_px=2000) -> bytes:
@@ -112,11 +109,17 @@ def ink_png(ink01, max_px=2000) -> bytes:
 
 
 def overlay_png(ink01, features, flags, figsize=(6, 6)) -> bytes:
+    """Ink with flagged tiles outlined in their MODE colour -- the dashboard
+    thumbnails reuse this, and they must speak the same palette as the report
+    (an earlier version outlined everything red regardless of mode)."""
     fig, ax = plt.subplots(figsize=figsize)
     ax.imshow(ink01, cmap="gray", origin="upper")
-    for (x, y, w, h) in _flag_extent(features, flags):
-        ax.add_patch(plt.Rectangle((x, y), w, h, fill=False,
-                                   edgecolor="#e23227", lw=1.5))
+    for mode, grid in _flag_layers(flags):
+        for t in features.tiles:
+            if grid[t.row, t.col]:
+                ax.add_patch(plt.Rectangle((t.x0, t.y0), t.x1 - t.x0, t.y1 - t.y0,
+                                           fill=False, edgecolor=_FLAG_COLORS[mode],
+                                           lw=1.5))
     ax.set_axis_off()
     return _fig_to_png(fig)
 
@@ -211,14 +214,12 @@ def _flag_layers(flags):
 def flags_png(ink01, features, flags) -> bytes:
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.imshow(ink01, cmap="gray", origin="upper", alpha=0.6)
-    # true-neon signal palette (matches the report chrome)
-    colors = {"orientation": "#e23227", "spacing": "#fcf151", "garble": "#5acbfa",
-              "seam": "#a855f7"}
     for mode, grid in _flag_layers(flags):
         for t in features.tiles:
             if grid[t.row, t.col]:
                 ax.add_patch(plt.Rectangle((t.x0, t.y0), t.x1 - t.x0, t.y1 - t.y0,
-                                           fill=True, alpha=0.35, color=colors[mode]))
+                                           fill=True, alpha=0.35,
+                                           color=_FLAG_COLORS[mode]))
     ax.set_axis_off()
     return _fig_to_png(fig)
 

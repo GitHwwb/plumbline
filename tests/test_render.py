@@ -19,6 +19,26 @@ def test_png_renderers_return_png_bytes():
         assert png[:8] == b"\x89PNG\r\n\x1a\n"
 
 
+def test_overlay_outlines_use_mode_colors():
+    # Dashboard thumbnails reuse overlay_png, which outlined every flagged
+    # tile in red regardless of mode (user-caught on the demo dashboard).
+    # Outlines must use the mode's palette colour: this fixture flags GARBLE,
+    # so sky #5acbfa pixels must appear and the old all-red must not.
+    from PIL import Image as PILImage
+    import io as _io
+    f, feats, flags = _setup()
+    assert flags.garble.any() and not flags.orient_break.any()
+    png = overlay_png(f, feats, flags)
+    a = np.asarray(PILImage.open(_io.BytesIO(png)).convert("RGB"), dtype=int)
+
+    def present(hexc, tol=40):
+        rgb = np.array([int(hexc[i:i + 2], 16) for i in (1, 3, 5)])
+        return bool((np.abs(a - rgb).sum(axis=2) < tol).any())
+
+    assert present("#5acbfa"), "garble outlines must be sky"
+    assert not present("#e23227"), "no red outlines on non-orientation flags"
+
+
 def test_flagged_regions_lists_pixel_locations():
     f, feats, flags = _setup()
     regions = flagged_regions(feats, flags)
