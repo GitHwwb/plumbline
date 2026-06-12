@@ -189,6 +189,28 @@ def test_input_warning_flags_noise_not_text():
     assert input_warning(cf, flag_tiles(cf)) is None
 
 
+def test_input_warning_fires_on_heavily_rotated_text():
+    # REGIME VIOLATION (user-reported on a real GP-banner label set): the
+    # orientation search sweeps only +-25deg, so text rotated far beyond that
+    # pegs the search boundary tile after tile, and every downstream detector
+    # (pitch, spacing, the VERTICAL-strip seam scan) measures across the wrong
+    # axis -- the real segment collected 50 'seam' flags that were artifacts.
+    # The tool must confess instead of emitting confident flags: structured
+    # tiles railing the sweep => loud input warning naming rotation.
+    f = glyph_rows((768, 768), row_pitch=40, angle=np.radians(60), seed=4)
+    feats = analyze_tiles(f)
+    w = input_warning(feats, flag_tiles(feats))
+    assert w is not None and "rotat" in w.lower()
+
+
+def test_input_warning_quiet_on_modest_skew():
+    # 10deg is comfortably inside the supported range: no rotation warning.
+    f = glyph_rows((768, 768), row_pitch=40, angle=np.radians(10), seed=4)
+    feats = analyze_tiles(f)
+    w = input_warning(feats, flag_tiles(feats))
+    assert w is None or "rotat" not in w.lower()
+
+
 def test_spacing_consensus_gate_keeps_real_jump_drops_scatter():
     from plumbline.model import TileFeatures, Tile
     rng = np.random.default_rng(0)

@@ -27,6 +27,7 @@
   .flagbox.seam { border-color:#c77dff; }
   .flagbox:hover, .flagbox.hot { background:rgba(255,255,255,.14); z-index:4; }
   .flagbox.hot { box-shadow:0 0 0 2px #ffffff66; }
+  .flagbox.glow { background:rgba(255,255,255,.08); box-shadow:0 0 6px 2px #ffffff44; z-index:3; }
   .flagbox .tip { display:none; position:absolute; left:0; top:100%; z-index:6;
                   background:#13243a; color:#cfe0ee; padding:4px 8px; font-size:11px;
                   white-space:nowrap; border:1px solid #2a3f55; border-radius:3px; }
@@ -113,14 +114,18 @@ function toggleOverlay(){
   applyOverlay('heat'); applyOverlay('orient');    // keep both overlay tabs in sync
 }
 document.querySelectorAll('tr.regrow').forEach(function(tr){
+  var box = function(){ return document.getElementById('fb' + tr.dataset.idx); };
   tr.addEventListener('click', function(){
     show('ink');                                   // boxes live on the ink view
-    var b = document.getElementById('fb' + tr.dataset.idx);
+    var b = box();
     if(!b) return;
     b.classList.add('hot');
     b.scrollIntoView({block:'center', behavior:'smooth'});
     setTimeout(function(){ b.classList.remove('hot'); }, 1600);
   });
+  // hovering the row gives its box a faint glow (no scroll -- click locates)
+  tr.addEventListener('mouseenter', function(){ var b = box(); if(b) b.classList.add('glow'); });
+  tr.addEventListener('mouseleave', function(){ var b = box(); if(b) b.classList.remove('glow'); });
 });
 show('ink');
 </script>

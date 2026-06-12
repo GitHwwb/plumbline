@@ -228,13 +228,38 @@ def trace_health(features, flags) -> ScoreReport:
 
 
 def input_warning(features, flags) -> Optional[str]:
-    """Heuristic warning when an input doesn't look like an ink prediction:
-    most analyzable tiles are dense but have no text-line structure -- the
-    signature of a bare surface render or a label mask, not detected ink.
-    Returns a message, or None when the input looks like real ink."""
+    """Heuristic warnings when an input is outside the tool's regime.
+
+    1. ROTATION OUT OF RANGE (checked first -- more specific and actionable):
+       the GLOBAL skew search (estimate_scale_and_skew) sweeps only +-25deg,
+       so text rotated beyond that pegs gtheta at EXACTLY the boundary --
+       measured: 60deg-rotated glyph text -> gtheta = -25.0deg railed, while
+       10deg text -> 10.0deg, upright -> 0.0deg, noise -> 0.0deg, all interior.
+       (Per-tile sweeps do NOT rail in this regime -- they re-seed from the
+       railed gtheta and find spurious interior maxima -- so the global rail
+       is the only reliable fingerprint.) The structured-fraction conjunct
+       keeps an unlucky flat-objective boundary argmax on noise from
+       misdiagnosing as rotation. This matters because every downstream
+       detector then measures across the wrong axis -- a real ~60deg-rotated
+       GP-banner label set collected 50 bogus 'seam' flags from the
+       vertical-strip scan (user-reported). Confess, don't emit confident flags.
+    2. DENSE-BUT-STRUCTURELESS: most analyzable tiles are dense but have no
+       text-line structure -- the signature of a bare surface render or a
+       label mask, not detected ink.
+
+    Returns a message, or None when the input looks like real upright ink."""
     n_conf = int(features.confidence.sum())
     if n_conf == 0:
         return None
+    gtheta = float(getattr(features, "gtheta", 0.0))
+    span = np.radians(25.0)                      # mirrors estimate_scale_and_skew's sweep
+    structured_frac = float((features.confidence
+                             & (features.band_strength >= 0.10)).sum()) / n_conf
+    if abs(gtheta) >= span - 1e-6 and structured_frac >= 0.5:
+        return ("text orientation appears to lie OUTSIDE the supported ±25° skew "
+                "range (the global skew search pegged its boundary). "
+                "Orientation/spacing/seam flags are unreliable on rotated "
+                "input -- rotate the image upright and re-run.")
     garble_frac = int(flags.garble.sum()) / n_conf
     if garble_frac >= 0.5:
         return ("input may not be an ink prediction: most analyzable tiles have "

@@ -51,6 +51,9 @@ def test_render_report_interactive_flag_boxes():
     assert 'class="tip"' in html                          # hover tooltip markup
     assert html.count('class="regrow"') == len(regions)   # table rows wired up
     assert "data-idx" in html
+    # hovering a table row glows its box (click remains the locate action)
+    assert "mouseenter" in html and "mouseleave" in html
+    assert ".glow" in html
 
 
 def test_render_report_shows_seam_banner_only_when_seam_found():
