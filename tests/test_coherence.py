@@ -35,6 +35,31 @@ def test_analyze_tiles_adopts_decisive_rotated_text_direction():
     assert abs(np.degrees(analyze_tiles(up).gtheta)) < 5
 
 
+def test_recon_prefers_line_axis_over_letter_axis():
+    # THE j_gp1 LESSON (user-caught): text has TWO periodicities -- letter
+    # pitch along the lines, line pitch across them -- and on sparse
+    # distinct-glyph labels the LETTER axis can out-sharpen the LINE axis
+    # (the real ~90deg-stored GP labels: letter axis won at 0deg/pstr 0.71
+    # over the true vertical lines, so the whole analysis ran sideways and
+    # the seam scan swept the wrong axis = silent false-negative risk).
+    # TYPOGRAPHY PRIOR: scribes pack letters tighter than lines, so when
+    # BOTH axes are genuinely periodic, the axis with the LARGER period is
+    # the line axis. A regular letter grid makes the ambiguity exact:
+    # letters every 50px along lines, lines every 120px.
+    from plumbline.coherence import analyze_tiles
+    f = np.zeros((1024, 1024), dtype=np.float32)
+    for ly in range(12, 1024 - 24, 120):       # horizontal text lines
+        for lx in range(8, 1024 - 24, 50):     # letters tighter along the line
+            f[ly:ly + 24, lx:lx + 24] = 0.9
+    # stored sideways (lines vertical): must adopt ~±90, not the letter axis
+    v = np.rot90(f).copy()
+    gv = np.degrees(analyze_tiles(v).gtheta)
+    assert abs(abs(gv) - 90) < 8, f"vertical lines read as {gv:.1f}° (letter axis?)"
+    # stored upright: the same rule must leave it alone (gtheta ~ 0)
+    gu = np.degrees(analyze_tiles(f).gtheta)
+    assert abs(gu) < 8, f"upright grid read as {gu:.1f}°"
+
+
 def test_band_contrast_robust_to_photo_background_glow():
     # A PHOTOGRAPH (e.g. the frag1 infrared) has the papyrus itself glowing
     # mid-gray, contributing most of the tile mean; std/mean then reads CLEAR

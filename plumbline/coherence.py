@@ -325,8 +325,29 @@ def analyze_tiles(ink, mask=None, tile=None, overlap=0.5,
     rscale = min(1.0, 1000.0 / max(rcrop.shape))
     rsmall = _zoom(rcrop, rscale, order=1) if rscale < 1.0 else rcrop
     gtheta_full = dominant_orientation(rsmall, seed=0.0, span=np.radians(89), n=37)
-    _, gfull_pstr = row_pitch(rsmall, gtheta_full, min_lag=4,
-                              max_lag=max(5, min(rsmall.shape) // 2))
+    rml = max(5, min(rsmall.shape) // 2)
+    gfull_pitch, gfull_pstr = row_pitch(rsmall, gtheta_full, min_lag=4, max_lag=rml)
+    # TYPOGRAPHY PRIOR (the j_gp1 lesson, user-caught): text has TWO
+    # periodicities -- letter pitch along the lines and line pitch across
+    # them -- and on sparse distinct-glyph labels the LETTER axis can
+    # out-sharpen the LINE axis (the real ~90deg-stored GP labels: letter
+    # axis won at 0deg sharpness 0.0167/pstr 0.71 over the true vertical
+    # lines at 0.0072/0.62, so the whole analysis ran sideways and the seam
+    # scan swept the wrong axis). Scribes pack letters tighter than lines,
+    # so when BOTH axes are genuinely periodic the axis with the LARGER
+    # period is the line axis: swap to the perpendicular. Measured gates --
+    # j (must swap): 0.71 / 0.62 / 92 > 44 -> swaps; each no-swap case fails
+    # a different gate: i_gp1 perp pstr -0.29, s5 winner pstr 0.05, upright
+    # glyph_rows ordering 26 < 39, rot75-sparse perp pstr 0.18. (A
+    # glyph-size plausibility test was tried first and FAILED: letters that
+    # touch along lines merge into multi-letter blobs at recon scale,
+    # inflating the size estimate exactly when the letter axis wins.)
+    if gfull_pstr >= 0.30:
+        gtheta_perp = float(wrap_angle(gtheta_full + np.pi / 2))
+        perp_pitch, perp_pstr = row_pitch(rsmall, gtheta_perp, min_lag=4, max_lag=rml)
+        if (perp_pstr >= 0.30 and np.isfinite(perp_pitch)
+                and np.isfinite(gfull_pitch) and perp_pitch > gfull_pitch):
+            gtheta_full, gfull_pstr = gtheta_perp, perp_pstr
     # ADOPT the text's own direction when the recon is decisive (beyond the
     # +-25deg regime AND periodic rows exist there): per-tile sweeps then seed
     # at the true angle, tile size comes from the pitch along the true rows,
